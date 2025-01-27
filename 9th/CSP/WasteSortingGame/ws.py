@@ -9,6 +9,7 @@
 # The player tries to achieve the highest score by sorting as many items correctly as possible within 60 seconds.
 
 import random
+from cmu_graphics import *
 
 app.background = 'lightSkyBlue'
 app.stepsPerSecond = 30
@@ -439,3 +440,5 @@ for i in range(len(trashItems)):
     allItems.append(item)
     item.name = trashNames[i]
     item.category = 'Trash'
+
+cmu_graphics.run()
