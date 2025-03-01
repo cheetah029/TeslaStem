@@ -8,8 +8,8 @@
 # They will lose points for every item placed incorrectly.
 # The player tries to achieve the highest score by sorting as many items correctly as possible within 60 seconds.
 
-import random
 from cmu_graphics import *
+import random
 
 app.background = 'lightSkyBlue'
 app.stepsPerSecond = 30
