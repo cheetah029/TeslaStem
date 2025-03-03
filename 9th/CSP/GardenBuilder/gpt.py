@@ -1,19 +1,25 @@
 from cmu_graphics import *
+import random
 
-def createPlant():
+def createPlant(row, col):
     """Create a new plant using Group with attributes"""
     plant = Group()
     # Plant attributes
+    plant.row = row
+    plant.col = col
     plant.type = "flower"
     plant.growth_stage = 0
     plant.has_pests = False
-    plant.water_needed = 2
+    plant.water_needed = 0  # This will now represent water icons (0-3)
     plant.is_fertilized = False
+    plant.days_without_water = 0  # Track consecutive days without water
+    plant.germination_days = 0  # Track days as a seed
     return plant
 
 # Plant functions
 def waterPlant(plant):
-    plant.water_needed = max(0, plant.water_needed - 1)
+    plant.water_needed = 0  # Remove all water icons
+    plant.days_without_water = 0  # Reset days without water
 
 def fertilizePlant(plant):
     plant.is_fertilized = True
@@ -27,12 +33,27 @@ def addGrowth(plant):
 def reduceGrowth(plant):
     plant.growth_stage = max(0, plant.growth_stage - 1)
 
-def resetDaily(plant):
-    plant.water_needed = 0
-    plant.is_fertilized = False
-
 def isFullyGrown(plant):
     return plant.growth_stage >= app.maxStages
+
+def resetDaily(plant):
+    """Reset daily attributes and update water status"""
+    plant.is_fertilized = False
+    plant.days_without_water += 1
+
+    # Update water needs based on days without water
+    if plant.days_without_water >= 1:
+        plant.water_needed = min(3, plant.days_without_water)
+
+    # Only add pests to plants that have sprouted (growth_stage > 0)
+    if plant.growth_stage > 0 and random.randrange(0, 5) == 0:  # 20% chance to get pests each day
+        plant.has_pests = True
+
+def plantDies(plant):
+    """Remove a plant and clean up its Group object"""
+    plant.visible = False  # Hide the Group object
+    app.grid[plant.row][plant.col] = None
+    clearPlantShapes(plant.row, plant.col)
 
 # ---------------------------------------
 # SETUP APP VARIABLES
@@ -53,7 +74,7 @@ def onAppStart():
 
     # Game state
     app.dayCounter = 0
-    app.actionMode = 'plant'
+    app.actionMode = 'seed'
     app.gameOver = False
 
     # Display for day and action
@@ -85,7 +106,7 @@ def setupGame():
         app.cellPlants.append(rowPlantShapes)
         app.cellBackgrounds.append(rowBG)
 
-    Label("Press p/w/f/x to set action, click cells, press d to end day", 10,
+    Label("Press s/w/f/x to set action, click cells, press d to end day", 10,
           app.rows * app.cellSize + 40, size=14, fill='black', align='left')
     Label("Goal: After 20 days, grow as many flowers as possible!", 10,
           app.rows * app.cellSize + 60, size=14, fill='black', align='left')
@@ -108,14 +129,15 @@ def drawPlant(r, c, stage):
     witheredColor = 'darkGoldenrod'
     witheredColor2 = 'grey'
     pestColor = 'red'
+    waterColor = 'skyBlue'
 
-    if plant.water_needed > 0:
-        if plant.water_needed == 1:
-            stemColor = witheredColor
-            leafColor = witheredColor
-        elif plant.water_needed == 2:
-            stemColor = witheredColor2
-            leafColor = witheredColor2
+    # Update colors based on days without water
+    if plant.days_without_water >= 2:
+        stemColor = witheredColor
+        leafColor = witheredColor
+    if plant.days_without_water >= 3:
+        stemColor = witheredColor2
+        leafColor = witheredColor2
     if plant.is_fertilized:
         seedColor = 'black'
 
@@ -163,9 +185,19 @@ def drawPlant(r, c, stage):
         center = Circle(centerX, centerY - 15, 5, fill=centerColor)
         app.cellPlants[r][c].extend([stem, leafLeft, leafRight, petal1, petal2, petal3, petal4, center])
 
+    # Draw indicators
+    # Pest indicator in top-right
     if plant.has_pests:
         bug = Circle(xPos + app.cellSize - 10, yPos + 10, 5, fill=pestColor)
         app.cellPlants[r][c].append(bug)
+    
+    # Water droplets in bottom-right
+    if plant.water_needed > 0:
+        for i in range(plant.water_needed):
+            dropY = yPos + app.cellSize - 10 - (i * 15)  # Start from bottom, go up
+            drop = Circle(xPos + app.cellSize - 10, dropY, 5, fill=waterColor)
+            dropTop = Circle(xPos + app.cellSize - 10, dropY - 3, 3, fill=waterColor)
+            app.cellPlants[r][c].extend([drop, dropTop])
 
 def handleAction(row, col):
     if app.gameOver:
@@ -175,20 +207,19 @@ def handleAction(row, col):
 
     plant = app.grid[row][col]
 
-    if app.actionMode == 'plant':
+    if app.actionMode == 'seed':
         if plant is None:
-            app.grid[row][col] = createPlant()
-    elif app.actionMode == 'water':
-        if plant is not None:
+            newPlant = createPlant(row, col)
+            app.grid[row][col] = newPlant
+            updateCellVisual(row, col)
+    elif plant is not None:
+        if app.actionMode == 'water':
             waterPlant(plant)
-    elif app.actionMode == 'fertilize':
-        if plant is not None:
+        elif app.actionMode == 'fertilize':
             fertilizePlant(plant)
-    elif app.actionMode == 'preventPests':
-        if plant is not None:
+        elif app.actionMode == 'preventPests':
             removePests(plant)
-
-    updateCellVisual(row, col)
+        updateCellVisual(row, col)
 
 def updateCellVisual(r, c):
     clearPlantShapes(r, c)
@@ -206,18 +237,36 @@ def endOfDayUpdate():
         for c in range(app.cols):
             plant = app.grid[r][c]
             if plant is not None:
-                if plant.water_needed > 0:
-                    reduceGrowth(plant)
-                
-                if plant.has_pests:
-                    reduceGrowth(plant)
-                
+                # Check if plant dies from lack of water
+                if plant.days_without_water >= 3:
+                    plantDies(plant)
+                    continue
+
+                # Handle negative effects (only for sprouted plants)
+                if plant.growth_stage > 0 and plant.has_pests:
+                    if plant.growth_stage == 1:
+                        plantDies(plant)
+                        continue
+                    else:
+                        reduceGrowth(plant)
+
+                # Handle seed germination
+                if plant.growth_stage == 0:
+                    plant.germination_days += 1
+                    if plant.germination_days >= 2:  # Sprout after 2 days
+                        if plant.days_without_water == 0:
+                            plant.growth_stage = 1
+                            plant.germination_days = 0
+
+                # Handle normal growth conditions
+                elif plant.days_without_water <= 1 and not plant.has_pests:
+                    # Plant grows if not withered and no pests
+                    addGrowth(plant)
+
+                # Handle fertilizer bonus (can still grow even if withered)
                 if plant.is_fertilized:
                     addGrowth(plant)
-                
-                if plant.water_needed == 0 and not plant.has_pests and not plant.is_fertilized:
-                    addGrowth(plant)
-                
+
                 resetDaily(plant)
                 updateCellVisual(r, c)
 
@@ -263,8 +312,8 @@ def onKeyPress(key):
     if app.gameOver:
         return
 
-    if key == 'p':
-        app.actionMode = 'plant'
+    if key == 's':
+        app.actionMode = 'seed'
     elif key == 'w':
         app.actionMode = 'water'
     elif key == 'f':
