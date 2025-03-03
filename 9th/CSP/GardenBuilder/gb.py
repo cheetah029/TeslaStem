@@ -1,152 +1,356 @@
+# This project relates to UN SDG #15, Life on Land.
+
+# Garden Builder is a plant growing simulation game where you manage a garden
+# by planting and caring for various plants. Throughout the game, you need to:
+# - Manage plants through different growth stages from seed to full growth
+# - Take care of plants by watering them
+# - Use fertilizer to help plants grow and deal with pests that may appear
+# - Game mechanics focus on plant maintenance and growth progression
+
 from cmu_graphics import *
-# (Uncomment in your CMU CS Academy code.)
+import random
 
-# ==========================================
-# GRID AND SHAPES
-# ==========================================
+def createPlant(row, col):
+    """Create a new plant using Group with attributes"""
+    plant = Group()
+    # Plant attributes
+    plant.row = row
+    plant.col = col
+    plant.type = "flower"
+    plant.growth_stage = 0
+    plant.has_pests = False
+    plant.water_needed = 0  # This will now represent water icons (0-3)
+    plant.is_fertilized = False
+    plant.days_without_water = 0  # Track consecutive days without water
+    plant.germination_days = 0  # Track days as a seed
+    return plant
 
-# Set the number of rows/cols in your "land".
-rows = 5
-cols = 5
+# Plant functions
+def waterPlant(plant):
+    plant.water_needed = 0  # Remove all water icons
+    plant.days_without_water = 0  # Reset days without water
 
-# Decide how large each cell will be on-screen (in pixels).
-cellSize = 400 / rows
+def fertilizePlant(plant):
+    plant.is_fertilized = True
 
-# This 2D list holds the state for each cell. Each cell is:
-# [plantType, growthStage, hasPests, waterNeeded, fertilized]
-# e.g., ["flower", 2, False, 0, True]
-grid = []
+def removePests(plant):
+    plant.has_pests = False
 
-# This 2D list holds the actual Rect (or Circle, etc.) for each cell in Shape Mode.
-# We'll update these shapes' .fill or other properties to show changes.
-gridShapes = Group()
+def addGrowth(plant):
+    plant.growth_stage = min(app.maxStages, plant.growth_stage + 1)
 
-# ==========================================
-# SIMPLE GLOBAL VARIABLES
-# ==========================================
-dayCounter = 0        # How many "days" have passed
-maxDays = 20          # Optional limit
-actionMode = "plant"  # 'plant', 'water', 'fertilize', or 'preventPests'
+def reduceGrowth(plant):
+    plant.growth_stage = max(0, plant.growth_stage - 1)
 
-# ==========================================
-# SETUP FUNCTION
-# ==========================================
+def isFullyGrown(plant):
+    return plant.growth_stage >= app.maxStages
+
+def resetDaily(plant):
+    """Reset daily attributes and update water status"""
+    plant.is_fertilized = False
+    plant.days_without_water += 1
+
+    # Update water needs based on days without water
+    if plant.days_without_water >= 1:
+        plant.water_needed = min(3, plant.days_without_water)
+
+    # Only add pests to plants that have sprouted (growth_stage > 0)
+    if plant.growth_stage > 0 and random.randrange(0, 5) == 0:  # 20% chance to get pests each day
+        plant.has_pests = True
+
+def plantDies(plant):
+    """Remove a plant and clean up its Group object"""
+    plant.visible = False  # Hide the Group object
+    app.grid[plant.row][plant.col] = None
+    clearPlantShapes(plant.row, plant.col)
+
+# ---------------------------------------
+# SETUP APP VARIABLES
+# ---------------------------------------
+def onAppStart():
+    # Basic grid config
+    app.background = 'limeGreen'
+    app.cellSize = 80
+    app.rows = 4
+    app.cols = 5
+    app.maxDays = 20
+    app.maxStages = 4
+    app.maxActions = 5  # Maximum actions per day
+
+    # Each cell will contain a Plant group or None
+    app.grid = []
+    app.cellPlants = []
+    app.cellBackgrounds = []
+
+    # Game state
+    app.dayCounter = 0
+    app.actionMode = 'seed'
+    app.gameOver = False
+    app.actionsLeft = app.maxActions  # Track remaining actions
+
+    # Display for day and action
+    app.display = Label(f"Day: {app.dayCounter}   Action: {app.actionMode.upper()}   Actions Left: {app.actionsLeft}", 10,
+            app.rows * app.cellSize + 10, align='left', size=14, fill='black')
+
+    app.tick = 0
+    setupGame()
+
+# ---------------------------------------
+# SETUP GAME
+# ---------------------------------------
 def setupGame():
-    """
-    Initialize the grid and shapes. Called once at the start.
+    for r in range(app.rows):
+        rowData = []
+        rowPlantShapes = []
+        rowBG = []
 
-    TODO:
-    1. Build 'grid' with rows x cols, each cell as [None, 0, False, 0, False].
-       (Meaning: no plant yet, growth=0, no pests, needs 0 water, not fertilized.)
-    2. For each cell, create a shape (Rect) in the same row/col position,
-       e.g.: shape = Rect(c*cellSize, r*cellSize, cellSize, cellSize, fill='brown')
-    3. Store these shapes in the 'shapes' 2D list in parallel to 'grid'.
-    """
-    for row in range(rows):
-        for col in range(cols):
-            grid.append([0, 0, 0, 0, 0])
-            gridShapes.add(Rect(col*cellSize, row*cellSize, cellSize, cellSize, fill='saddleBrown', border='black'))
+        for c in range(app.cols):
+            rowData.append(None)  # Start with no plant
 
-# ==========================================
-# MAIN ACTIONS
-# ==========================================
+            xPos = c * app.cellSize
+            yPos = r * app.cellSize
+            bg = Rect(xPos, yPos, app.cellSize, app.cellSize, fill='saddlebrown', border='black', borderWidth=1)
+            rowBG.append(bg)
+            rowPlantShapes.append([])
+
+        app.grid.append(rowData)
+        app.cellPlants.append(rowPlantShapes)
+        app.cellBackgrounds.append(rowBG)
+
+    Label("Press s/w/f/x to set action, click cells, press d to end day", 10,
+          app.rows * app.cellSize + 40, size=14, fill='black', align='left')
+    Label("Goal: After 20 days, grow as many flowers as possible!", 10,
+          app.rows * app.cellSize + 60, size=14, fill='black', align='left')
+
+def drawPlant(r, c, stage):
+    """
+    Draw shapes for a plant at a given growth stage.
+    """
+    xPos = c * app.cellSize
+    yPos = r * app.cellSize
+    centerX = xPos + app.cellSize/2
+    centerY = yPos + app.cellSize/2
+
+    plant = app.grid[r][c]
+    seedColor = 'sienna'
+    stemColor = 'lime'
+    leafColor = 'lime'
+    petalColor = 'pink'
+    centerColor = 'yellow'
+    witheredColor = 'darkGoldenrod'
+    witheredColor2 = 'grey'
+    pestColor = 'red'
+    waterColor = 'skyBlue'
+
+    # Update colors based on days without water
+    if plant.days_without_water >= 2:
+        stemColor = witheredColor
+        leafColor = witheredColor
+    if plant.days_without_water >= 3:
+        stemColor = witheredColor2
+        leafColor = witheredColor2
+    if plant.is_fertilized:
+        seedColor = 'black'
+
+    # Stage 0: seed
+    if stage == 0:
+        seed = Circle(centerX, centerY, 6, fill=seedColor)
+        app.cellPlants[r][c].append(seed)
+
+    # Stage 1: small sprout
+    elif stage == 1:
+        root = Circle(centerX, centerY + 10, 6, fill=seedColor)
+        stem = Rect(centerX - 2, centerY - 10, 4, 20, fill=stemColor)
+        leafLeft = Oval(centerX - 8, centerY - 10, 16, 8, fill=leafColor)
+        leafRight = Oval(centerX + 8, centerY - 10, 16, 8, fill=leafColor)
+        app.cellPlants[r][c].extend([root, stem, leafLeft, leafRight])
+
+    # Stage 2: developing plant
+    elif stage == 2:
+        root = Circle(centerX, centerY + 10, 6, fill=seedColor)
+        stem = Rect(centerX - 2, centerY - 20, 4, 30, fill=stemColor)
+        leafLeft = Oval(centerX - 8, centerY - 10, 16, 8, fill=leafColor)
+        leafRight = Oval(centerX + 8, centerY - 10, 16, 8, fill=leafColor)
+        leafTop = Oval(centerX, centerY - 20, 8, 16, fill=leafColor)
+        app.cellPlants[r][c].extend([root, stem, leafLeft, leafRight, leafTop])
+
+    # Stage 3: mature plant
+    elif stage == 3:
+        stem = Rect(centerX - 2, centerY - 20, 4, 35, fill=stemColor)
+        leafLeft = Oval(centerX - 8, centerY, 16, 8, fill=leafColor)
+        leafRight = Oval(centerX + 8, centerY, 16, 8, fill=leafColor)
+        leafLeft2 = Oval(centerX - 8, centerY - 10, 16, 8, fill=leafColor)
+        leafRight2 = Oval(centerX + 8, centerY - 10, 16, 8, fill=leafColor)
+        leafTop = Oval(centerX, centerY - 20, 8, 16, fill=leafColor)
+        app.cellPlants[r][c].extend([stem, leafLeft, leafRight, leafLeft2, leafRight2, leafTop])
+
+    # Stage 4: fully grown flower
+    else:
+        stem = Rect(centerX - 2, centerY - 15, 4, 30, fill=stemColor)
+        leafLeft = Oval(centerX - 8, centerY, 16, 8, fill=leafColor)
+        leafRight = Oval(centerX + 8, centerY, 16, 8, fill=leafColor)
+        petal1 = Circle(centerX - 5, centerY - 15, 5, fill=petalColor)
+        petal2 = Circle(centerX + 5, centerY - 15, 5, fill=petalColor)
+        petal3 = Circle(centerX, centerY - 20, 5, fill=petalColor)
+        petal4 = Circle(centerX, centerY - 11, 5, fill=petalColor)
+        center = Circle(centerX, centerY - 15, 5, fill=centerColor)
+        app.cellPlants[r][c].extend([stem, leafLeft, leafRight, petal1, petal2, petal3, petal4, center])
+
+    # Draw indicators
+    # Pest indicator in top-right
+    if plant.has_pests:
+        bug = Circle(xPos + app.cellSize - 10, yPos + 10, 5, fill=pestColor)
+        app.cellPlants[r][c].append(bug)
+
+    # Water droplets in bottom-right
+    if plant.water_needed > 0:
+        for i in range(plant.water_needed):
+            dropY = yPos + app.cellSize - 10 - (i * 15)  # Start from bottom, go up
+            drop = Circle(xPos + app.cellSize - 10, dropY, 5, fill=waterColor)
+            dropTop = Circle(xPos + app.cellSize - 10, dropY - 3, 3, fill=waterColor)
+            app.cellPlants[r][c].extend([drop, dropTop])
+
 def handleAction(row, col):
-    """
-    Based on 'actionMode', modify the cell at grid[row][col].
+    if app.gameOver or app.actionsLeft <= 0:  # Check if actions are depleted
+        return
+    if not (0 <= row < app.rows and 0 <= col < app.cols):
+        return
 
-    'plant': If cell is empty (plantType=None), set plantType to something (e.g. "flower"),
-             also set growthStage=0, waterNeeded=2, etc.
-    'water': Reduce waterNeeded by 1 (don't go below 0).
-    'fertilize': cell[4] = True.
-    'preventPests': cell[2] = False.
+    plant = app.grid[row][col]
+    actionTaken = False
 
-    After updating the cell, you may also want to change shapes[row][col].fill
-    to visually represent the update.
+    if app.actionMode == 'seed':
+        if plant is None:
+            newPlant = createPlant(row, col)
+            app.grid[row][col] = newPlant
+            actionTaken = True
+    elif plant is not None:
+        if app.actionMode == 'water':
+            if plant.water_needed > 0:
+                waterPlant(plant)
+                actionTaken = True
+        elif app.actionMode == 'fertilize':
+            if plant.growth_stage <= 2:  # Only count as action if fertilizer can be applied
+                if not plant.is_fertilized:
+                    fertilizePlant(plant)
+                    actionTaken = True
+        elif app.actionMode == 'preventPests':
+            if plant.has_pests:  # Only count as action if pests are present
+                removePests(plant)
+                actionTaken = True
 
-    TODO:
-    1. Access the cell list: cell = grid[row][col].
-    2. Use if/elif to check actionMode and modify the cell accordingly.
-    3. Update shapes[row][col].fill to reflect the new state if desired.
-    """
-    pass
+    if actionTaken:
+        app.actionsLeft -= 1
+        updateCellVisual(row, col)
+        updateDayDisplay()
+
+        if app.actionsLeft <= 0:
+            endOfDayUpdate()
+
+def updateCellVisual(r, c):
+    clearPlantShapes(r, c)
+    plant = app.grid[r][c]
+    if plant is not None:
+        drawPlant(r, c, plant.growth_stage)
 
 def endOfDayUpdate():
-    """
-    Runs once after the user finishes a day (e.g., pressing 'd').
+    if app.gameOver:
+        return
 
-    TODO:
-    1. Increase dayCounter by 1.
-    2. Loop over every cell in grid:
-       - If waterNeeded > 0, the plant might not grow or might wither.
-       - If hasPests=True, hamper or reset growth unless it was prevented.
-       - If fertilized=True, you might add +1 to growthStage or similar boost.
-       - Then reset waterNeeded/fertilized as needed for the next day.
-    3. Optionally check if dayCounter >= maxDays or if you've met a "biodiversity" goal.
-    """
-    pass
+    app.dayCounter += 1
+    app.actionsLeft = app.maxActions  # Reset actions for new day
 
-# Optional function if you want a "score" or something similar.
-def calculateBiodiversityScore():
-    """
-    Example helper that returns how many cells have different types or certain growth levels.
-    
-    TODO:
-    1. Loop over grid, count plant types that are grown.
-    2. Return a number representing the "score".
-    """
-    pass
+    for r in range(app.rows):
+        for c in range(app.cols):
+            plant = app.grid[r][c]
+            if plant is not None:
+                # Check if plant dies from lack of water
+                if plant.days_without_water >= 3:
+                    plantDies(plant)
+                    continue
 
-# ==========================================
-# EVENT HANDLERS
-# ==========================================
+                # Handle negative effects (only for sprouted plants)
+                if plant.growth_stage > 0 and plant.has_pests:
+                    if plant.growth_stage == 1:
+                        plantDies(plant)
+                        continue
+                    else:
+                        reduceGrowth(plant)
+
+                # Handle seed germination
+                if plant.growth_stage == 0:
+                    plant.germination_days += 1
+                    if plant.germination_days >= 2:  # Sprout after 2 days
+                        if plant.days_without_water == 0:
+                            plant.growth_stage = 1
+                            plant.germination_days = 0
+
+                # Handle normal growth conditions
+                elif plant.days_without_water <= 1 and not plant.has_pests:
+                    # Plant grows if not withered and no pests
+                    addGrowth(plant)
+
+                # Handle fertilizer bonus (can still grow even if withered)
+                if plant.is_fertilized:
+                    addGrowth(plant)
+
+                resetDaily(plant)
+                updateCellVisual(r, c)
+
+    if app.dayCounter >= app.maxDays:
+        endGame()
+    else:
+        updateDayDisplay()
+
+def calculateScore():
+    score = 0
+    for r in range(app.rows):
+        for c in range(app.cols):
+            plant = app.grid[r][c]
+            if plant is not None and isFullyGrown(plant):
+                score += 1
+    return score
+
+# Keep existing helper functions and event handlers
+def clearPlantShapes(r, c):
+    for shape in app.cellPlants[r][c]:
+        shape.visible = False
+    app.cellPlants[r][c].clear()
+
+def updateDayDisplay():
+    app.display.value = f"Day: {app.dayCounter}   Action: {app.actionMode.upper()}   Actions Left: {app.actionsLeft}"
+    app.display.left = 10
+
+def endGame():
+    app.gameOver = True
+    finalScore = calculateScore()
+    Rect(0, 0, app.cols*app.cellSize, app.rows*app.cellSize, fill='lightgray', opacity=70)
+    Label(f"Good Job! Score: {finalScore}", 120, 150, size=20, fill='blue', bold=True)
+    Label("(No more actions possible)", 120, 180, size=16, fill='black')
+
 def onMousePress(x, y):
-    """
-    When the user clicks, figure out which cell was clicked and call handleAction(row, col).
-
-    TODO:
-    1. Convert x, y to row, col by dividing by cellSize:
-        row = y // cellSize
-        col = x // cellSize
-    2. Check boundaries (0 <= row < rows, etc.).
-    3. Call handleAction(row, col) if valid.
-    """
-    pass
+    if app.gameOver:
+        return
+    row = y // app.cellSize
+    col = x // app.cellSize
+    handleAction(row, col)
 
 def onKeyPress(key):
-    """
-    Handles user input from the keyboard to set actionMode or end the day.
+    if app.gameOver:
+        return
 
-    - 'p' => 'plant'
-    - 'w' => 'water'
-    - 'f' => 'fertilize'
-    - 'x' => 'preventPests'
-    - 'd' => calls endOfDayUpdate()
+    if key == 's':
+        app.actionMode = 'seed'
+    elif key == 'w':
+        app.actionMode = 'water'
+    elif key == 'f':
+        app.actionMode = 'fertilize'
+    elif key == 'x':
+        app.actionMode = 'preventPests'
+    elif key == 'd':
+        endOfDayUpdate()
 
-    TODO:
-    1. if key == 'p': actionMode = 'plant'
-       if key == 'w': actionMode = 'water'
-       if key == 'f': actionMode = 'fertilize'
-       if key == 'x': actionMode = 'preventPests'
-       if key == 'd': endOfDayUpdate()
-    """
-    pass
+    updateDayDisplay()
 
-def onStep():
-    """
-    Called many times per second in Shape Mode. If you want a purely "turn-based" game,
-    you might not need anything here except optional animations.
-
-    TODO (optional):
-    1. Animate shapes if a plant grows from stage 0 to stage 1, or color changes, etc.
-    2. Or simply leave it empty if you don't need real-time animations.
-    """
-    pass
-
-# ==========================================
-# MAIN START (SIMPLE)
-# ==========================================
-setupGame()
+onAppStart()
 cmu_graphics.run()
-#
-# In some CMU CS Academy environments, you might put setupGame() in onAppStart. 
-# The key is to ensure the grid/shapes are created before user interaction begins.
