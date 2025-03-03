@@ -66,6 +66,7 @@ def onAppStart():
     app.cols = 5
     app.maxDays = 20
     app.maxStages = 4
+    app.maxActions = 5  # Maximum actions per day
 
     # Each cell will contain a Plant group or None
     app.grid = []
@@ -76,9 +77,10 @@ def onAppStart():
     app.dayCounter = 0
     app.actionMode = 'seed'
     app.gameOver = False
+    app.actionsLeft = app.maxActions  # Track remaining actions
 
     # Display for day and action
-    app.display = Label(f"Day: {app.dayCounter}   Action: {app.actionMode.upper()}", 10,
+    app.display = Label(f"Day: {app.dayCounter}   Action: {app.actionMode.upper()}   Actions Left: {app.actionsLeft}", 10,
             app.rows * app.cellSize + 10, align='left', size=14, fill='black')
 
     app.tick = 0
@@ -95,7 +97,7 @@ def setupGame():
 
         for c in range(app.cols):
             rowData.append(None)  # Start with no plant
-            
+
             xPos = c * app.cellSize
             yPos = r * app.cellSize
             bg = Rect(xPos, yPos, app.cellSize, app.cellSize, fill='saddlebrown', border='black', borderWidth=1)
@@ -190,7 +192,7 @@ def drawPlant(r, c, stage):
     if plant.has_pests:
         bug = Circle(xPos + app.cellSize - 10, yPos + 10, 5, fill=pestColor)
         app.cellPlants[r][c].append(bug)
-    
+
     # Water droplets in bottom-right
     if plant.water_needed > 0:
         for i in range(plant.water_needed):
@@ -200,26 +202,41 @@ def drawPlant(r, c, stage):
             app.cellPlants[r][c].extend([drop, dropTop])
 
 def handleAction(row, col):
-    if app.gameOver:
+    if app.gameOver or app.actionsLeft <= 0:  # Check if actions are depleted
         return
     if not (0 <= row < app.rows and 0 <= col < app.cols):
         return
 
     plant = app.grid[row][col]
+    actionTaken = False
 
     if app.actionMode == 'seed':
         if plant is None:
             newPlant = createPlant(row, col)
             app.grid[row][col] = newPlant
-            updateCellVisual(row, col)
+            actionTaken = True
     elif plant is not None:
         if app.actionMode == 'water':
-            waterPlant(plant)
+            if plant.water_needed > 0:
+                waterPlant(plant)
+                actionTaken = True
         elif app.actionMode == 'fertilize':
-            fertilizePlant(plant)
+            if plant.growth_stage <= 2:  # Only count as action if fertilizer can be applied
+                if not plant.is_fertilized:
+                    fertilizePlant(plant)
+                    actionTaken = True
         elif app.actionMode == 'preventPests':
-            removePests(plant)
+            if plant.has_pests:  # Only count as action if pests are present
+                removePests(plant)
+                actionTaken = True
+
+    if actionTaken:
+        app.actionsLeft -= 1
         updateCellVisual(row, col)
+        updateDayDisplay()
+
+        if app.actionsLeft <= 0:
+            endOfDayUpdate()
 
 def updateCellVisual(r, c):
     clearPlantShapes(r, c)
@@ -232,6 +249,7 @@ def endOfDayUpdate():
         return
 
     app.dayCounter += 1
+    app.actionsLeft = app.maxActions  # Reset actions for new day
 
     for r in range(app.rows):
         for c in range(app.cols):
@@ -291,7 +309,7 @@ def clearPlantShapes(r, c):
     app.cellPlants[r][c].clear()
 
 def updateDayDisplay():
-    app.display.value = f"Day: {app.dayCounter}   Action: {app.actionMode.upper()}"
+    app.display.value = f"Day: {app.dayCounter}   Action: {app.actionMode.upper()}   Actions Left: {app.actionsLeft}"
     app.display.left = 10
 
 def endGame():
