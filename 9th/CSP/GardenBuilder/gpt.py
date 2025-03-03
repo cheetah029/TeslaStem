@@ -1,3 +1,12 @@
+# This project relates to UN SDG #15, Life on Land.
+
+# Garden Builder is a plant growing simulation game where you manage a garden
+# by planting and caring for various plants. Throughout the game, you need to:
+# - Manage plants through different growth stages from seed to full growth
+# - Take care of plants by watering them
+# - Use fertilizer to help plants grow and deal with pests that may appear
+# - Game mechanics focus on plant maintenance and growth progression
+
 from cmu_graphics import *
 import random
 
