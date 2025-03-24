@@ -1,0 +1,35 @@
+Core Premise: A turn-based game where the player balances feeding their community with preserving the fish population to avoid collapse. The player must catch fish to feed their community while also regulating their consumption of the fish population to avoid extinction.
+
+Daily Cycle: Each day, the player tries to catch fish by clicking on the fish when they appear, sees population changes, and deals with community hunger.
+
+Fish Population Mechanics: A function calculates reproduction based on current population, subtracts the caught fish, and may factor in random events.
+
+Community Demand: The community must be fed a set number of fish daily; underfishing raises hunger, overfishing risks fish extinction.
+
+Random Events: Storms, algae blooms, or cleanup campaigns alter reproduction rates or fishing possibilities, adding unpredictability.
+
+Upgrades & Gear: Unlock better nets or patrol boats to reduce catch impact or prevent illegal fishing, encouraging long-term strategies. Better bait can increase the catch rate.
+
+Biodiversity Option: Multiple fish species with different birth/death rates can add depth and teach ecosystem complexity.
+
+Victory Condition: Sustain a stable fish population and avoid widespread hunger for a set number of days.
+
+Failure States: Fish population reaching zero, hunger becoming too high, or ecosystem imbalance.
+
+Visual Representation: Fish drawn or represented on screen, with real-time feedback on population size and hunger levels.
+
+User Interaction: Keyboard or mouse input to catch fish, invest in upgrades, and respond to events each day.
+
+Educational Value: Demonstrates real-world implications of overfishing and the importance of sustainable resource management.
+
+Scoring Mechanism: Could track how many villagers are consistently fed alongside average fish population health.
+
+Scaffolding: Includes functions for population updates, event triggers, and hunger tracking—called each turn in code.
+
+Balancing Constraint: If players become too conservative, hunger accumulates; if too aggressive, fish collapse becomes likely.
+
+Art & Animation: Realistic and detailed complex shapes or images convey daily changes, with event text highlighting sudden shifts in weather or conditions.
+
+Player Agency: Strategic decisions each day affect both immediate survival (food) and long-term sustainability (population).
+
+Implementation: Written in Python with the cmu_graphics library, using onKeyPress or onMousePress for user input, and onStep for turn progression.
