@@ -14,6 +14,10 @@ def create_game():
     game.caught_fish_today = 0
     game.game_over = False
     
+    # Mouse position tracking
+    game.mouse_x = 200
+    game.mouse_y = 200
+    
     # Upgrade states
     game.upgrades = {
         'net': 1,  # Fishing efficiency multiplier
@@ -23,10 +27,73 @@ def create_game():
     
     # Fish visualization
     game.visible_fish = []
-    game.max_visible_fish = 5
+    game.max_visible_fish = 3  # Reduced from 5 to 3
     
     # Create UI elements
-    game.background = Rect(0, 0, 400, 400, fill='lightBlue')
+    game.background = Group()
+    
+    # Sky
+    sky = Rect(0, 0, 400, 150, fill='skyBlue')  # Light blue sky
+    
+    # Land/Dock
+    land = Rect(0, 110, 400, 50, fill=rgb(139, 69, 19))  # Brown dock, moved up
+    land_detail = Rect(0, 110, 400, 10, fill=rgb(101, 67, 33))  # Darker wood detail
+    
+    # Water
+    water = Rect(0, 160, 400, 240, fill=rgb(0, 105, 148))  # Deeper blue water, adjusted height
+    
+    # Add background elements
+    game.background.add(sky)
+    game.background.add(water)
+    game.background.add(land)
+    game.background.add(land_detail)
+    
+    # Create fishing rod
+    game.rod = Group()
+    
+    # Rod handle (brown wood texture) - extended handle
+    handle = Line(0, 100, 80, 100, fill=rgb(139, 69, 19), lineWidth=8)  # Extended handle length
+    handle_grip = Line(0, 100, 30, 100, fill=rgb(101, 67, 33), lineWidth=10)  # Longer grip
+    
+    # Rod body (elegant curve using multiple lines)
+    rod_color = rgb(160, 82, 45)  # Lighter brown for rod
+    rod_sections = []
+    curve_points = [(80, 100), (120, 110), (160, 130), (180, 140)]  # Adjusted curve points to match new handle
+    for i in range(len(curve_points)-1):
+        section = Line(curve_points[i][0], curve_points[i][1],
+                      curve_points[i+1][0], curve_points[i+1][1],
+                      fill=rod_color, lineWidth=4-i*0.8)  # Gradually thinner
+        rod_sections.append(section)
+    
+    # Fishing line (thin, slightly transparent)
+    game.line = Group()
+    main_line = Line(180, 140, 180, 140, fill='white', opacity=50, lineWidth=1)
+    game.line.add(main_line)
+    
+    # Rod guides (line holders)
+    guides = []
+    guide_positions = [(100, 105), (130, 120), (160, 135)]  # Adjusted guide positions
+    for x, y in guide_positions:
+        guide = Circle(x, y, 3, fill=None, border='silver', borderWidth=1)
+        guides.append(guide)
+    
+    # Add all rod parts
+    game.rod.add(handle)
+    game.rod.add(handle_grip)
+    for section in rod_sections:
+        game.rod.add(section)
+    for guide in guides:
+        game.rod.add(guide)
+    
+    # Instructions
+    game.instructions = Group(
+        Label('Sustainable Fishing Simulator', 200, 20, size=16, bold=True),
+        Label('Use the fishing rod to catch fish', 200, 350, size=14),
+        Label('Press D to end the day', 200, 370, size=14),
+        Label('Catch enough fish to feed the community!', 200, 390, size=14)
+    )
+    
+    # Stats display
     game.stats = Group(
         Label('Day: 1', 20, 20, align='left'),
         Label('Fish Population: 1000', 20, 40, align='left'),
@@ -66,8 +133,8 @@ def create_fish_colors():
 def spawn_fish():
     """Spawn new visible fish for catching"""
     while len(app.game.visible_fish) < app.game.max_visible_fish:
-        x = random.randint(50, 350)
-        y = random.randint(50, 350)
+        x = random.randint(150, 350)  # Adjusted to spawn only on right side
+        y = random.randint(180, 350)  # Adjusted to spawn only in water below dock
         size = random.randint(30, 50)  # Base size
         
         # Create fish shape
@@ -150,16 +217,37 @@ def check_game_over():
         app.game.game_over = True
         app.game.game_over_screen.visible = True
 
+def update_fishing_rod():
+    """Update fishing line position based on mouse"""
+    if not app.game.game_over:
+        # Update line position
+        line = app.game.line.children[0]
+        rod_tip_x, rod_tip_y = 180, 140  # Updated rod tip position
+        
+        # Calculate line angle and length
+        dx = app.game.mouse_x - rod_tip_x
+        dy = app.game.mouse_y - rod_tip_y
+        length = min(math.sqrt(dx*dx + dy*dy), 300)  # Increased line length limit to 300
+        
+        # Update line end point
+        angle = math.atan2(dy, dx)
+        line.x2 = rod_tip_x + length * math.cos(angle)
+        line.y2 = rod_tip_y + length * math.sin(angle)
+
 def try_catch_fish(mouse_x, mouse_y):
     """Attempt to catch a fish at the clicked location"""
     if app.game.game_over:
         return
     
+    # Get line end position
+    line = app.game.line.children[0]
+    hook_x, hook_y = line.x2, line.y2
+    
     for fish in app.game.visible_fish[:]:
-        # Get the fish body (first child of the group)
-        fish_body = fish.children[1]  # Body is now second element after tail
-        distance = math.sqrt((fish.centerX - mouse_x)**2 + (fish.centerY - mouse_y)**2)
-        if distance < fish_body.fish_size:  # Made hitbox slightly larger
+        # Get the fish body
+        fish_body = fish.children[1]
+        distance = math.sqrt((fish.centerX - hook_x)**2 + (fish.centerY - hook_y)**2)
+        if distance < fish_body.fish_size:
             app.game.caught_fish_today += 1 * app.game.upgrades['net'] * app.game.upgrades['bait']
             app.game.visible_fish.remove(fish)
             fish.visible = False
@@ -200,19 +288,24 @@ def onAppStart():
 def onStep():
     if not app.game.game_over:
         spawn_fish()
+        update_fishing_rod()
     update_stats_display()
 
 def onMousePress(mouseX, mouseY):
     try_catch_fish(mouseX, mouseY)
 
 def onKeyPress(key):
-    if key == 'space':
+    if key == 'd':
         end_day()
     elif key == 'r' and app.game.game_over:
         # Remove old game
         app.game.visible = False
         # Create new game
         app.game = create_game()
+
+def onMouseMove(mouseX, mouseY):
+    app.game.mouse_x = mouseX
+    app.game.mouse_y = mouseY
 
 onAppStart()
 cmu_graphics.run()
