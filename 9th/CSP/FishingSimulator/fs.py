@@ -95,7 +95,7 @@ def create_game():
     game.hunger_bar = Group()
     bar_width = 100
     bar_height = 15
-    bar_x = 125  # Moved right to be next to hunger percentage
+    bar_x = 120  # Moved right to be next to hunger percentage
     bar_y = 53   # Aligned with hunger level text
     corner_radius = 5  # For rounded corners
     
@@ -212,7 +212,7 @@ def create_game():
         Label('Sustainable Fishing Simulator', 200, 16, size=16, bold=True),
         Label('Use the fishing rod to catch fish', 200, 350, size=14),
         Label('Press D to end the day', 200, 370, size=14),
-        Label('Catch enough fish to feed the community!', 200, 390, size=14)
+        Label('Catch enough fish to feed the community, but don\'t overfish!', 200, 390, size=14)
     )
     
     # Stats display with consistent left alignment
@@ -278,7 +278,9 @@ def spawn_fish():
         side = random.choice(['left', 'right'])
         x = -50 if side == 'left' else 450  # Start off-screen
         y = random.randint(200, 350)  # Only spawn in water area
-        size = random.randint(30, 50)  # Base size
+        # Generate size on 1-10 scale, then convert to visual size (30-50)
+        size_scale = random.randint(1, 10)
+        size = 30 + (size_scale - 1) * 2.2  # Convert 1-10 to 30-50 range
         
         # Create fish shape
         fish_group = Group()
@@ -336,8 +338,9 @@ def spawn_fish():
         fish_group.add(fish_eye)       # Eye
         fish_group.add(fish_pupil)     # Pupil
         
-        # Store size in the body shape for collision detection
-        fish_body.fish_size = size
+        # Store both visual size and scale size for different purposes
+        fish_body.fish_size = size  # For collision detection
+        fish_body.size_scale = size_scale  # For display and calculations
         
         # Set speed and position
         fish_group.speed = random.uniform(1, 2)  # Random speed for variety
@@ -352,21 +355,23 @@ def spawn_fish():
 
 def calculate_reproduction():
     """Calculate daily fish population changes"""
-    base_growth_rate = 0.05  # Base growth rate
+    base_growth_rate = 0.2  # Set to 0.2 for balanced growth
     carrying_capacity = 2000
     
     # Adjust growth rate based on population size
-    # Lower growth rate when population is small
-    population_factor = max(0.2, min(1.0, app.game.fish_population / 100))
+    # Lower growth rate when population is small but not as severely
+    population_factor = max(0.6, min(1.0, app.game.fish_population / 100))  # Increased minimum from 0.4 to 0.6
     base_growth_rate *= population_factor
     
     # Calculate average size of caught fish
     if app.game.caught_fish_sizes:
         avg_size = sum(app.game.caught_fish_sizes) / len(app.game.caught_fish_sizes)
-        # Larger fish reduce reproduction rate more
-        # Each size unit above 40 reduces growth rate by 0.001
-        size_penalty = max(0, (avg_size - 40) * 0.001)
-        growth_rate = max(0.01, base_growth_rate - size_penalty)  # Minimum growth rate of 0.01
+        # Convert visual size back to 1-10 scale for calculations
+        avg_size_scale = (avg_size - 30) / 2.2 + 1
+        # Larger fish reduce reproduction rate more significantly
+        # Each size unit above 5 reduces growth rate by 0.04 (doubled from 0.02)
+        size_penalty = max(0, (avg_size_scale - 5) * 0.04)
+        growth_rate = max(0.1, base_growth_rate - size_penalty)  # Increased minimum from 0.05 to 0.1
     else:
         growth_rate = base_growth_rate
     
@@ -471,7 +476,7 @@ def update_hunger_bar():
         # Only make bar red if game ended due to no food
         if app.game.food_level <= 0:
             bar = app.game.hunger_bar.children[1]  # The fill bar
-            bar.width = 0  # Empty bar
+            bar.width = 98  # Keep bar full width
             bar.fill = 'red'
             bar.opacity = 100  # Full opacity
 
@@ -561,8 +566,10 @@ def try_catch_fish(mouse_x, mouse_y):
             # Update bucket counter
             bucket.children[3].value = f'{app.game.caught_fish_today}/5'
             
+            # Convert visual size to 1-10 scale for food calculation
+            size_scale = (fish_size - 30) / 2.2 + 1
             # Reduce food level based on fish size (larger fish increase more food)
-            food_increase = fish_size * 0.2  # Each size unit increases food by 0.2%
+            food_increase = size_scale * 2  # Each size unit increases food by 2%
             app.game.food_level = min(100, app.game.food_level + food_increase)  # Cap at 100%
             
             # If bucket is now full, automatically end the day
@@ -585,10 +592,15 @@ def try_catch_fish(mouse_x, mouse_y):
 
 def end_day():
     """Process end of day events"""
+    # Check for game over conditions first
+    if check_game_over():
+        return  # End the function if game is over
+    
+    # Only process day events if game is not over
     calculate_reproduction()
     update_hunger()
     
-    # Check for game over conditions first
+    # Check for game over again after updating hunger
     if check_game_over():
         return  # End the function if game is over
     
@@ -613,8 +625,11 @@ def update_stats_display():
     
     # Calculate average size of caught fish from stored sizes
     if app.game.caught_fish_sizes:
+        # Convert visual sizes to 1-10 scale for display
         avg_size = sum(app.game.caught_fish_sizes) / len(app.game.caught_fish_sizes)
-        app.game.stats.children[3].value = f'Caught Today: {app.game.caught_fish_today}/5 (Avg Size: {int(avg_size)})'
+        # Convert to 1-10 scale and round to 1 decimal place
+        avg_size_scale = int(((avg_size - 30) / 2.2 + 1) * 10 + 0.5) / 10
+        app.game.stats.children[3].value = f'Caught Today: {app.game.caught_fish_today}/5 (Avg Size: {avg_size_scale})'
     else:
         app.game.stats.children[3].value = f'Caught Today: {app.game.caught_fish_today}/5'
     app.game.stats.children[3].left = app.game.stats.left_position  # Reset left position
