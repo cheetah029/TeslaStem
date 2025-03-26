@@ -258,12 +258,15 @@ def create_fish_colors():
 def spawn_fish():
     """Spawn new visible fish for catching"""
     while len(app.game.visible_fish) < app.game.max_visible_fish:
-        x = random.randint(150, 350)  # Adjusted to spawn only on right side
-        y = random.randint(180, 350)  # Adjusted to spawn only in water below dock
+        # Spawn fish on either side of the screen
+        side = random.choice(['left', 'right'])
+        x = -50 if side == 'left' else 450  # Start off-screen
+        y = random.randint(200, 350)  # Only spawn in water area
         size = random.randint(30, 50)  # Base size
         
         # Create fish shape
         fish_group = Group()
+        fish_group.dragged = False  # Add dragged property
         
         # Random fish colors
         main_color, belly_color = create_fish_colors()
@@ -310,15 +313,20 @@ def spawn_fish():
         # Store size in the body shape for collision detection
         fish_body.fish_size = size
         
-        # Only flip horizontally (0 or 360 degrees)
-        if random.choice([True, False]):
-            fish_group.rotateAngle = 0
-        else:
-            fish_group.rotateAngle = 360
+        # Set direction based on spawn side
+        fish_group.direction = 1 if side == 'left' else -1
+        fish_group.speed = random.uniform(1, 2)  # Random speed for variety
+        
+        # Set rotation based on direction
+        fish_group.rotateAngle = 0 if side == 'left' else 180
         
         # Move the fish after setting rotation
         fish_group.centerX = x
         fish_group.centerY = y
+        
+        # Add some vertical movement
+        fish_group.vertical_offset = random.uniform(0, 2*math.pi)  # Random starting phase
+        fish_group.vertical_speed = random.uniform(0.02, 0.04)  # Random speed for vertical motion
         
         app.game.visible_fish.append(fish_group)
 
@@ -483,6 +491,7 @@ def try_catch_fish(mouse_x, mouse_y):
             if app.game.dragged_fish in app.game.visible_fish:
                 app.game.visible_fish.remove(app.game.dragged_fish)  # Remove from list if present
             app.game.dragged_fish.visible = False
+            app.game.dragged_fish.dragged = False  # Reset dragged state
             app.game.dragged_fish = None
             # Update bucket counter
             bucket.children[3].value = f'{app.game.caught_fish_today}/5'
@@ -500,6 +509,7 @@ def try_catch_fish(mouse_x, mouse_y):
             # Only allow catching if bucket isn't full
             if app.game.caught_fish_today < 5:
                 app.game.dragged_fish = fish
+                fish.dragged = True  # Set dragged state
                 return True
     
     return False
@@ -576,6 +586,21 @@ def onStep():
         update_clouds()
         update_trash()
         update_hunger_bar()
+        
+        # Update fish positions
+        for fish in app.game.visible_fish[:]:  # Use slice copy to avoid modification while iterating
+            if not fish.dragged:  # Only move fish that aren't being dragged
+                # Horizontal movement
+                fish.centerX += fish.direction * fish.speed
+                
+                # Vertical wavy movement
+                fish.centerY += math.sin(fish.vertical_offset + app.game.time * fish.vertical_speed) * 0.5
+                
+                # Remove fish if they swim off screen
+                if (fish.centerX < -100 or fish.centerX > 500):
+                    if fish in app.game.visible_fish:
+                        app.game.visible_fish.remove(fish)
+                    fish.visible = False
         
         # Update dragged fish position
         if app.game.dragged_fish:
