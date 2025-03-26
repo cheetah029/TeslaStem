@@ -1,0 +1,666 @@
+# This project relates to UN SDG 14: Life Below Water.
+# The project is a fishing simulation game that allows players to experience the challenges of fishing sustainably in a polluted environment.
+# The game encourages players to think about the impact of their actions on the environment and the importance of sustainable fishing practices.
+
+# The game is a simple fishing game where the player must catch fish to feed the community.
+# The player can catch and deposit fish into the bucket, and they can catch a maximum of 5 fish per day.
+# The player needs to catch enough fish to feed the community, while refraining from catching too many fish and depleting the fish population.
+# Trash and pollution occasionally float by in the water, which reduce the fish population and reproduction rate.
+# The player can click on trash items to remove them, which will decrease the pollution level and restore the fish population growth rate.
+# The player will lose the game if the community runs out of food, the fish have all gone extinct, or if the water becomes too polluted.
+# The player tries to meet the community's daily food needs while sustaining a healthy fish population for 20 days.
+
+import random
+import math
+
+def create_game():
+    game = Group()
+
+    # Initial game parameters
+    game.fish_population = 30
+    game.food_decrease_base = 50
+    game.food_level = 100
+    game.day = 1
+    game.target_days = 20
+    game.game_over = False
+    game.time = 0
+    game.caught_fish_today = 0
+    game.caught_fish_sizes = []
+
+    # Mouse position tracking
+    game.mouse_x = 200
+    game.mouse_y = 200
+    game.dragged_fish = None
+
+    # Bucket dimensions and position
+    game.bucket_height = 40
+    game.bucket_top_width = 40
+    game.bucket_bottom_width = 25
+    game.bucket_x = 350
+    game.bucket_y = 120
+
+    # Trash and fish visualization
+    game.trash = Group()
+    game.trash_timer = 0
+    game.pollution_level = 0
+    game.visible_fish = []
+    game.max_visible_fish = 3
+
+    # Create UI elements
+    game.background = Group()
+
+    # Sky and water
+    sky = Rect(0, 0, 400, 400, fill='skyBlue')
+    water = Rect(0, 180, 400, 220, fill=rgb(0, 105, 148))
+
+    # Land/Dock
+    land = Rect(0, 130, 400, 50, fill=rgb(139, 69, 19))
+    land_detail = Rect(0, 130, 400, 10, fill=rgb(101, 67, 33))
+
+    # Dock posts
+    for x in [50, 150, 250]:
+        post = Rect(x, 130, 10, 70, fill=rgb(101, 67, 33))
+        game.background.add(post)
+
+    # Add background elements
+    game.background.add(sky)
+    game.background.add(water)
+    game.background.add(land)
+    game.background.add(land_detail)
+    game.background.add(game.trash)
+
+    # Create bucket
+    game.bucket = Group()
+
+    # Trapezoid body
+    bucket_body = Polygon(
+        game.bucket_x - game.bucket_top_width/2, game.bucket_y,
+        game.bucket_x + game.bucket_top_width/2, game.bucket_y,
+        game.bucket_x + game.bucket_bottom_width/2, game.bucket_y + game.bucket_height,
+        game.bucket_x - game.bucket_bottom_width/2, game.bucket_y + game.bucket_height,
+        fill='silver'
+    )
+
+    # Handle and rim
+    handle_radius = 20
+    bucket_handle = Arc(game.bucket_x, game.bucket_y, handle_radius * 2, handle_radius * 2, 
+                       -90, 180, fill=None, border='silver', borderWidth=2)
+    bucket_rim = Oval(game.bucket_x, game.bucket_y, game.bucket_top_width, 10, fill=rgb(130, 130, 130))
+    bucket_counter = Label('0/5', game.bucket_x, game.bucket_y + 20, size=14, bold=True)
+
+    game.bucket.add(bucket_body)
+    game.bucket.add(bucket_handle)
+    game.bucket.add(bucket_rim)
+    game.bucket.add(bucket_counter)
+
+    # Create hunger bar
+    game.hunger_bar = Group()
+    bar_width = 100
+    bar_height = 15
+    bar_x = 120
+    bar_y = 53
+
+    # Background and border
+    bar_bg = Rect(bar_x, bar_y, bar_width, bar_height, fill='darkGray')
+    bar_border = Rect(bar_x, bar_y, bar_width, bar_height, 
+                     fill=None, border='black', borderWidth=2)
+
+    # Fill bar and shine effect
+    bar_fill = Rect(bar_x + 1, bar_y + 1, bar_width - 2, bar_height - 2, 
+                    fill=rgb(50, 205, 50))
+    shine = Polygon(
+        bar_x + 1, bar_y + 1,
+        bar_x + bar_width - 1, bar_y + 1,
+        bar_x + bar_width - 1, bar_y + 4,
+        bar_x + 1, bar_y + 4,
+        fill=rgb(255, 255, 255), opacity=20
+    )
+
+    game.hunger_bar.add(bar_bg)
+    game.hunger_bar.add(bar_fill)
+    game.hunger_bar.add(shine)
+    game.hunger_bar.add(bar_border)
+
+    # Create fishing rod
+    game.rod = Group()
+
+    # Rod handle and grip
+    handle = Line(0, 100, 80, 100, fill=rgb(139, 69, 19), lineWidth=8)
+    handle_grip = Line(-70, 100, 30, 100, fill=rgb(101, 67, 33), lineWidth=10)
+
+    # Rod body
+    rod_color = rgb(160, 82, 45)
+    rod_sections = []
+    curve_points = [(80, 100), (120, 110), (160, 130), (180, 140)]
+    for i in range(len(curve_points)-1):
+        section = Line(curve_points[i][0], curve_points[i][1],
+                      curve_points[i+1][0], curve_points[i+1][1],
+                      fill=rod_color, lineWidth=4-i*0.8)
+        rod_sections.append(section)
+
+    # Rod guides
+    for x, y in [(100, 105), (130, 120), (160, 135)]:
+        guide = Circle(x, y, 3, fill=None, border='silver', borderWidth=1)
+        game.rod.add(guide)
+
+    # Add all rod parts
+    game.rod.add(handle)
+    game.rod.add(handle_grip)
+    for section in rod_sections:
+        game.rod.add(section)
+    game.rod.rotateAngle = -35
+    game.rod.centerY = 150
+
+    # Create fishing line with hook
+    game.line = Group()
+    rod_tip = rod_sections[-1]
+    main_line = Line(rod_tip.x2, rod_tip.y2, rod_tip.x2, rod_tip.y2, fill='white', opacity=50, lineWidth=1)
+
+    # Create hook
+    hook_size = 6
+    hook_group = Group()
+
+    # Vertical line
+    hook_line = Line(0, 0, 0, hook_size * 2, fill='black', lineWidth=2)
+
+    # Curved hook
+    curve_points = []
+    segments = 12
+    for i in range(segments + 1):
+        angle = math.pi * i / segments
+        x = hook_size * math.cos(angle)
+        y = hook_size * 2 + hook_size * math.sin(angle)
+        if i == 0:
+            x = 0
+            y = hook_size * 2
+        curve_points.append((x, y))
+
+    # Create smooth curve
+    for i in range(len(curve_points) - 1):
+        segment = Line(curve_points[i][0], curve_points[i][1],
+                      curve_points[i+1][0], curve_points[i+1][1],
+                      fill='black', lineWidth=2)
+        hook_group.add(segment)
+
+    hook_group.add(hook_line)
+    hook_group.rotateAngle = 180
+
+    game.line.add(main_line)
+    game.line.add(hook_group)
+
+    # Instructions
+    game.instructions = Group(
+        Label('Sustainable Fishing Simulator', 200, 16, size=16, bold=True),
+        Label('Use the fishing rod to catch fish', 200, 350, size=14),
+        Label('Press D to end the day', 200, 370, size=14),
+        Label('Catch enough fish to feed the community, but don\'t overfish!', 200, 390, size=14)
+    )
+
+    # Stats display
+    game.stats = Group()
+    game.stats.left_position = 15
+
+    game.stats.add(
+        Label('Day: 1', game.stats.left_position, 20),
+        Label('Fish Population: 30', game.stats.left_position, 40),
+        Label('Food Level: 100%', game.stats.left_position, 60),
+        Label('Caught Today: 0/5', game.stats.left_position, 80)
+    )
+
+    # Game over screen
+    game_over_overlay = Rect(0, 0, 400, 400, fill=rgb(0, 0, 0), opacity=60)
+    game.game_over_screen = Group(
+        game_over_overlay,
+        Label('GAME OVER', 200, 180, size=30, fill='white'),
+        Label('', 200, 220, fill='white'),
+        Label('', 200, 240, fill='white'),
+        Label('Press R to restart', 200, 280, fill='white')
+    )
+    game.game_over_screen.visible = False
+    game.game_over_screen.toFront()
+
+    return game
+
+def create_fish_colors():
+    """Create a random fish color scheme"""
+    # Base colors for fish
+    base_colors = [
+        rgb(255, 128, 0),  # Orange
+        rgb(255, 160, 0),  # Light orange
+        rgb(255, 215, 0),  # Golden
+        rgb(255, 99, 71),  # Tomato red
+        rgb(255, 140, 0),  # Dark orange
+    ]
+    main_color = random.choice(base_colors)
+    # Make belly color lighter
+    belly_color = rgb(min(255, main_color.red + 40),
+                     min(255, main_color.green + 40),
+                     min(255, main_color.blue + 40))
+    return main_color, belly_color
+
+def spawn_fish():
+    """Spawn new visible fish for catching"""
+    # Adjust max visible fish based on population
+    app.game.max_visible_fish = max(1, min(3, int(1 + app.game.fish_population / 10)))
+
+    # Adjust spawn rate based on population
+    spawn_chance = max(0.2, min(1.0, app.game.fish_population / 30))
+
+    while len(app.game.visible_fish) < app.game.max_visible_fish:
+        if random.random() > spawn_chance:
+            continue
+
+        # Spawn fish on either side of the screen
+        side = random.choice(['left', 'right'])
+        x = -50 if side == 'left' else 450
+        y = random.randint(200, 350)
+        size_scale = random.randint(1, 10)
+        size = 30 + (size_scale - 1) * 2.2
+        
+        # Create fish shape
+        fish_group = Group()
+        fish_group.dragged = False
+
+        # Random fish colors
+        main_color, belly_color = create_fish_colors()
+
+        # Set direction and orientation
+        fish_group.direction = -1 if side == 'right' else 1
+        x_multiplier = -1 if side == 'right' else 1
+
+        # Create fish components
+        fish_body = Oval(0, 0, size * 2, size, fill=main_color)
+        fish_belly = Oval(0, size/4, size * 1.6, size/2, fill=belly_color)
+
+        # Tail
+        tail = Polygon(
+            -size * x_multiplier, 0,
+            -size * 1.6 * x_multiplier, -size * 0.5,
+            -size * 1.6 * x_multiplier, size * 0.5,
+            fill=main_color
+        )
+
+        # Bottom fin
+        bottom_fin_points = [
+            size/4 * x_multiplier, size/3,
+            size/2 * x_multiplier, 0,
+            0, 0,
+        ]
+        fish_bottom_fin = Polygon(*bottom_fin_points, fill=main_color)
+
+        # Eye and gill
+        fish_eye = Circle(size/2 * x_multiplier, -size/6, size/10, fill='white')
+        fish_pupil = Circle(size/2 * x_multiplier, -size/6, size/20, fill='black')
+        fish_gill = Circle(size/3 * x_multiplier, 0, size/2, fill=None, border=main_color, borderWidth=2)
+        fish_gill.opacity = 30
+
+        # Add all parts to the group
+        fish_group.add(tail)
+        fish_group.add(fish_body)
+        fish_group.add(fish_belly)
+        fish_group.add(fish_bottom_fin)
+        fish_group.add(fish_gill)
+        fish_group.add(fish_eye)
+        fish_group.add(fish_pupil)
+
+        # Store size information
+        fish_body.fish_size = size
+        fish_body.size_scale = size_scale
+
+        # Set movement properties
+        fish_group.speed = random.uniform(1, 2)
+        fish_group.centerX = x
+        fish_group.centerY = y
+        fish_group.vertical_offset = random.uniform(0, 2*math.pi)
+        fish_group.vertical_speed = random.uniform(0.02, 0.04)
+
+        app.game.visible_fish.append(fish_group)
+
+def calculate_reproduction():
+    """Calculate daily fish population changes"""
+    base_growth_rate = 0.15
+    carrying_capacity = 100
+
+    # Pollution reduces growth rate
+    pollution_factor = 1 - (app.game.pollution_level / 500) * 0.6
+    base_growth_rate *= max(0.4, pollution_factor)
+
+    # Calculate average size of caught fish
+    if app.game.caught_fish_sizes:
+        avg_size = sum(app.game.caught_fish_sizes) / len(app.game.caught_fish_sizes)
+        avg_size_scale = (avg_size - 30) / 2.2 + 1
+        size_penalty = max(0, (avg_size_scale - 5) * 0.04)
+
+        # Population-dependent minimum growth rate
+        min_growth_rate = max(0.05, 0.15 - (app.game.fish_population / 50) * 0.10)
+        growth_rate = max(min_growth_rate, base_growth_rate - size_penalty)
+    else:
+        growth_rate = base_growth_rate
+
+    # Calculate reproduction and mortality
+    reproduction = app.game.fish_population * growth_rate * (1 - app.game.fish_population / carrying_capacity)
+    mortality_rate = (app.game.pollution_level / 500) * 0.20
+    mortality = int(app.game.fish_population * mortality_rate)
+
+    # Apply changes
+    app.game.fish_population = max(0, int(app.game.fish_population + reproduction - mortality))
+    app.game.caught_fish_sizes = []
+
+def update_hunger():
+    """Update community food level based on caught fish"""
+    fish_deficit = max(0, app.game.food_decrease_base - app.game.caught_fish_today)
+    app.game.food_level = max(0, app.game.food_level - fish_deficit * 0.5)  # Each fish deficit decreases food by 0.5%
+    if app.game.food_level <= 0:  # Changed condition to check for 0 food
+        app.game.game_over = True
+
+def check_game_over():
+    """Check if any failure conditions are met or if player has won"""
+    if app.game.food_level <= 0:
+        app.game.game_over = True
+        app.game.game_over_screen.visible = True
+        app.game.game_over_screen.toFront()
+        app.game.game_over_screen.children[1].value = 'GAME OVER'
+        app.game.game_over_screen.children[2].value = f'You failed to keep the community fed! Final fish population: {app.game.fish_population}'
+        update_hunger_bar()
+        return True
+    elif app.game.pollution_level >= 500:
+        app.game.game_over = True
+        app.game.game_over_screen.visible = True
+        app.game.game_over_screen.toFront()
+        app.game.game_over_screen.children[1].value = 'GAME OVER'
+        app.game.game_over_screen.children[2].value = 'The water has become too polluted!'
+        app.game.game_over_screen.children[3].value = f'Final fish population: {app.game.fish_population}'
+        return True
+    elif app.game.day >= app.game.target_days:
+        app.game.game_over = True
+        app.game.game_over_screen.visible = True
+        app.game.game_over_screen.toFront()
+        app.game.game_over_screen.children[1].value = 'YOU WIN!'
+        app.game.game_over_screen.children[2].value = 'Congratulations! You kept the community fed for 20 days!'
+        app.game.game_over_screen.children[3].value = f'Final fish population: {app.game.fish_population}'
+        update_hunger_bar()
+        return True
+    return False
+
+def update_trash():
+    """Update trash positions and create new trash"""
+    app.game.trash_timer += 1
+
+    # Create new trash
+    if app.game.trash_timer >= 300:  # Every ~10 seconds
+        app.game.trash_timer = 0
+        if len(app.game.trash.children) < 2:  # Max 2 pieces of trash
+            trash = create_trash()
+            side = random.choice(['left', 'right'])
+            trash.centerX = -50 if side == 'left' else 450
+            trash.centerY = random.randint(200, 350)
+            trash.spawn_side = side
+            app.game.trash.add(trash)
+            app.game.pollution_level = min(500, app.game.pollution_level + 100)
+
+    # Move existing trash
+    for trash in app.game.trash.children:
+        if trash.spawn_side == 'left':
+            trash.centerX += 1
+        else:
+            trash.centerX -= 1
+
+        trash.centerY += math.sin(trash.vertical_offset + app.game.time * 0.1) * 0.5
+        trash.rotateAngle += math.sin(app.game.time * 0.05) * 0.5
+
+        if trash.centerX < -100 or trash.centerX > 500:
+            trash.visible = False
+            app.game.trash.remove(trash)
+            app.game.pollution_level = min(500, app.game.pollution_level + 50)
+
+def update_hunger_bar():
+    """Update food bar color and size"""
+    if not app.game.game_over:
+        bar = app.game.hunger_bar.children[1]  # The fill bar
+        food = app.game.food_level
+
+        bar.width = max(0, 98 * (food/100))
+
+        if food > 70:
+            bar.fill = rgb(0, 255, 0)
+            bar.opacity = 100
+        elif food > 30:
+            bar.opacity = 100
+            if food > 50:
+                ratio = (food - 50) / 20
+                bar.fill = rgb(255 * (1-ratio), 255, 0)
+            else:
+                ratio = (food - 30) / 20
+                bar.fill = rgb(255, 255 * ratio, 0)
+        else:
+            bar.fill = 'red'
+            bar.opacity = 50 + math.sin(app.game.time * 0.2) * 50
+    else:
+        if app.game.food_level <= 0:
+            bar = app.game.hunger_bar.children[1]
+            bar.width = 98
+            bar.fill = 'red'
+            bar.opacity = 100
+
+def update_fishing_rod():
+    """Update fishing line position based on mouse"""
+    if not app.game.game_over:
+        line = app.game.line.children[0]
+        hook = app.game.line.children[1]
+
+        # Get rod tip position (last section at index 7)
+        rod_tip = app.game.rod.children[7]
+        rod_tip_x, rod_tip_y = rod_tip.x2, rod_tip.y2
+
+        # Update line start position
+        line.x1, line.y1 = rod_tip_x, rod_tip_y
+
+        # Calculate line angle and length
+        dx = app.game.mouse_x - rod_tip_x
+        dy = app.game.mouse_y - rod_tip_y
+        length = min(math.sqrt(dx*dx + dy*dy), 300)
+        angle = math.atan2(dy, dx)
+
+        # Update line end point and hook
+        line.x2 = rod_tip_x + length * math.cos(angle)
+        line.y2 = rod_tip_y + length * math.sin(angle)
+        hook.centerX, hook.centerY = line.x2, line.y2
+        hook.rotateAngle = math.degrees(angle) + 270
+
+def try_catch_fish(mouse_x, mouse_y):
+    """Attempt to catch a fish at the clicked location"""
+    if app.game.game_over:
+        return
+
+    line = app.game.line.children[0]
+    hook_x, hook_y = line.x2, line.y2
+
+    if app.game.dragged_fish:
+        bucket = app.game.bucket
+        if app.game.caught_fish_today >= 5:
+            return False
+
+        if (mouse_x > bucket.centerX - app.game.bucket_top_width/2 and 
+            mouse_x < bucket.centerX + app.game.bucket_top_width/2 and
+            mouse_y > bucket.centerY - app.game.bucket_height/2 and 
+            mouse_y < bucket.centerY + app.game.bucket_height/2):
+            app.game.caught_fish_today += 1
+            if app.game.dragged_fish in app.game.visible_fish:
+                app.game.visible_fish.remove(app.game.dragged_fish)
+            app.game.dragged_fish.visible = False
+            app.game.dragged_fish.dragged = False
+
+            fish_size = app.game.dragged_fish.children[1].fish_size
+            app.game.caught_fish_sizes.append(fish_size)
+            app.game.fish_population = max(0, app.game.fish_population - 1)
+
+            if app.game.fish_population <= 0:
+                app.game.game_over = True
+                app.game.game_over_screen.visible = True
+                app.game.game_over_screen.toFront()
+                app.game.game_over_screen.children[2].value = f'Game Over! The fish population has been depleted!'
+                return True
+
+            app.game.dragged_fish = None
+            bucket.children[3].value = f'{app.game.caught_fish_today}/5'
+
+            size_scale = (fish_size - 30) / 2.2 + 1
+            food_increase = min(15, 2 + (size_scale - 1) * 1.5)
+            app.game.food_level = min(100, app.game.food_level + food_increase)
+
+            if app.game.caught_fish_today >= 5:
+                end_day()
+            return True
+        return False
+
+    for trash in app.game.trash.children:
+        if trash.hits(mouse_x, mouse_y):
+            app.game.trash.remove(trash)
+            trash.visible = False
+
+            remaining_trash = len(app.game.trash.children)
+            min_pollution = remaining_trash * 100
+            new_pollution = max(min_pollution, app.game.pollution_level - 150)
+            app.game.pollution_level = new_pollution
+
+            return True
+
+    for fish in reversed(app.game.visible_fish[:]):
+        fish_body = fish.children[1]
+        distance = math.sqrt((fish.centerX - hook_x)**2 + (fish.centerY - hook_y)**2)
+        if distance < fish_body.fish_size and app.game.caught_fish_today < 5:
+            app.game.dragged_fish = fish
+            fish.dragged = True
+            return True
+
+    return False
+
+def end_day():
+    """Process end of day events"""
+    # Check for game over conditions first
+    if check_game_over():
+        return  # End the function if game is over
+
+    # Only process day events if game is not over
+    calculate_reproduction()
+    update_hunger()
+
+    # Check for game over again after updating hunger
+    if check_game_over():
+        return  # End the function if game is over
+
+    # Only increment day if we haven't won yet
+    app.game.day += 1
+    app.game.caught_fish_today = 0
+
+    # Update stats display
+    update_stats_display()
+
+def update_stats_display():
+    """Update the display of game statistics"""
+    app.game.stats.children[0].value = f'Day: {app.game.day}/{app.game.target_days}'
+    app.game.stats.children[0].left = app.game.stats.left_position
+
+    app.game.stats.children[1].value = f'Fish Population: {app.game.fish_population}'
+    app.game.stats.children[1].left = app.game.stats.left_position
+
+    app.game.stats.children[2].value = f'Food Level: {int(app.game.food_level)}%'
+    app.game.stats.children[2].left = app.game.stats.left_position
+
+    if app.game.caught_fish_sizes:
+        avg_size = sum(app.game.caught_fish_sizes) / len(app.game.caught_fish_sizes)
+        avg_size_scale = int(((avg_size - 30) / 2.2 + 1) * 10 + 0.5) / 10
+        app.game.stats.children[3].value = f'Caught Today: {app.game.caught_fish_today}/5 (Avg Size: {avg_size_scale})'
+    else:
+        app.game.stats.children[3].value = f'Caught Today: {app.game.caught_fish_today}/5'
+    app.game.stats.children[3].left = app.game.stats.left_position
+
+    if len(app.game.stats.children) < 5:
+        app.game.stats.add(Label('Pollution: 0%', app.game.stats.left_position, 100))
+
+    pollution_percent = min(100, int(app.game.pollution_level / 5))
+    app.game.stats.children[4].value = f'Pollution: {pollution_percent}%'
+    app.game.stats.children[4].left = app.game.stats.left_position
+
+def create_trash():
+    """Create a piece of floating trash"""
+    # Randomly choose which side to spawn from
+    side = random.choice(['left', 'right'])
+    x = -50 if side == 'left' else 450  # Start off-screen
+    y = random.randint(200, 350)  # Only spawn in water area
+
+    trash_group = Group()
+    trash_type = random.choice(['bottle', 'bag', 'can'])
+
+    if trash_type == 'bottle':
+        shape = Circle(x, y, 8, fill='lightGray')
+    elif trash_type == 'bag':
+        shape = Rect(x-8, y-8, 16, 16, fill='white', opacity=50)
+    else:  # can
+        shape = Rect(x-6, y-8, 12, 16, fill='silver')
+
+    trash_group.add(shape)
+    trash_group.trash_type = trash_type
+
+    # Add some random rotation for variety
+    trash_group.rotateAngle = random.randint(-45, 45)
+
+    # Add some random vertical offset for wave motion
+    trash_group.vertical_offset = random.uniform(0, 2*math.pi)
+
+    return trash_group
+
+def onAppStart():
+    app.game = create_game()
+    app.stepsPerSecond = 30
+
+def onStep():
+    if not app.game.game_over:
+        app.game.time += 1
+        spawn_fish()
+        update_fishing_rod()
+        update_trash()
+        update_hunger_bar()
+
+        # Check for game over conditions immediately
+        if app.game.food_level <= 0 or app.game.pollution_level >= 500:
+            check_game_over()
+
+        # Update fish positions
+        for fish in app.game.visible_fish[:]:  # Use slice copy to avoid modification while iterating
+            if not fish.dragged:  # Only move fish that aren't being dragged
+                # Horizontal movement
+                fish.centerX += fish.direction * fish.speed
+
+                # Vertical wavy movement
+                fish.centerY += math.sin(fish.vertical_offset + app.game.time * fish.vertical_speed) * 0.5
+
+                # Remove fish if they swim off screen
+                if (fish.centerX < -100 or fish.centerX > 500):
+                    if fish in app.game.visible_fish:
+                        app.game.visible_fish.remove(fish)
+                    fish.visible = False
+
+        # Update dragged fish position
+        if app.game.dragged_fish:
+            app.game.dragged_fish.centerX = app.game.mouse_x
+            app.game.dragged_fish.centerY = app.game.mouse_y
+    update_stats_display()
+
+def onMousePress(mouseX, mouseY):
+    try_catch_fish(mouseX, mouseY)
+
+def onKeyPress(key):
+    if key == 'd':
+        end_day()
+    elif key == 'r' and app.game.game_over:
+        # Remove old game
+        app.game.visible = False
+        # Create new game
+        app.game = create_game()
+
+def onMouseMove(mouseX, mouseY):
+    app.game.mouse_x = mouseX
+    app.game.mouse_y = mouseY
+
+onAppStart()
