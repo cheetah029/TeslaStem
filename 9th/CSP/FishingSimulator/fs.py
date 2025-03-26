@@ -271,6 +271,16 @@ def spawn_fish():
         # Random fish colors
         main_color, belly_color = create_fish_colors()
         
+        # Set direction based on spawn side (reversed from before)
+        # If spawning on left, move right (direction = 1)
+        # If spawning on right, move left (direction = -1)
+        fish_group.direction = -1 if side == 'right' else 1
+        
+        # Create fish components with x-coordinates flipped if swimming left
+        # Fish spawning on left (moving right) have normal orientation (x_multiplier = 1)
+        # Fish spawning on right (moving left) have flipped orientation (x_multiplier = -1)
+        x_multiplier = -1 if side == 'right' else 1
+        
         # Main body (more elongated oval)
         fish_body = Oval(0, 0, size * 2, size, fill=main_color)
         
@@ -279,26 +289,26 @@ def spawn_fish():
         
         # Tail (larger triangle shape)
         tail = Polygon(
-            -size, 0,          # Center point where tail meets body
-            -size * 1.6, -size * 0.5,  # Top point
-            -size * 1.6, size * 0.5,   # Bottom point
+            -size * x_multiplier, 0,          # Center point where tail meets body
+            -size * 1.6 * x_multiplier, -size * 0.5,  # Top point
+            -size * 1.6 * x_multiplier, size * 0.5,   # Bottom point
             fill=main_color
         )
         
         # Bottom fin (positioned underneath)
         bottom_fin_points = [
-            size/4, size/3,    # Bottom tip
-            size/2, 0,         # Back
-            0, 0,              # Front
+            size/4 * x_multiplier, size/3,    # Bottom tip
+            size/2 * x_multiplier, 0,         # Back
+            0, 0,                              # Front
         ]
         fish_bottom_fin = Polygon(*bottom_fin_points, fill=main_color)
         
         # Eye (slightly repositioned)
-        fish_eye = Circle(size/2, -size/6, size/10, fill='white')
-        fish_pupil = Circle(size/2, -size/6, size/20, fill='black')
+        fish_eye = Circle(size/2 * x_multiplier, -size/6, size/10, fill='white')
+        fish_pupil = Circle(size/2 * x_multiplier, -size/6, size/20, fill='black')
         
         # Add gill detail - using a partial circle border for the curved line
-        fish_gill = Circle(size/3, 0, size/2, fill=None, border=main_color, borderWidth=2)
+        fish_gill = Circle(size/3 * x_multiplier, 0, size/2, fill=None, border=main_color, borderWidth=2)
         fish_gill.opacity = 30  # Only show a portion of the circle
         
         # Add all parts to the group in the correct order
@@ -313,14 +323,8 @@ def spawn_fish():
         # Store size in the body shape for collision detection
         fish_body.fish_size = size
         
-        # Set direction based on spawn side
-        fish_group.direction = 1 if side == 'left' else -1
+        # Set speed and position
         fish_group.speed = random.uniform(1, 2)  # Random speed for variety
-        
-        # Set rotation based on direction
-        fish_group.rotateAngle = 0 if side == 'left' else 180
-        
-        # Move the fish after setting rotation
         fish_group.centerX = x
         fish_group.centerY = y
         
