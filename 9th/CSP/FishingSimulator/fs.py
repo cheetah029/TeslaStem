@@ -129,7 +129,7 @@ def create_game():
     game.hunger_bar.add(shine)
     game.hunger_bar.add(bar_border)
     
-    # Add background elements
+    # Add background elements in correct order
     game.background.add(sky)
     game.background.add(water)
     game.background.add(post1)
@@ -137,6 +137,10 @@ def create_game():
     game.background.add(post3)
     game.background.add(land)
     game.background.add(land_detail)
+    
+    # Create a separate group for fish to ensure they're behind the rod and line
+    game.fish_layer = Group()
+    game.background.add(game.fish_layer)
     
     # Create fishing rod with hook
     game.rod = Group()
@@ -321,6 +325,7 @@ def spawn_fish():
         fish_group.centerY = y
         
         app.game.visible_fish.append(fish_group)
+        app.game.fish_layer.add(fish_group)  # Add to the fish layer group
 
 def calculate_reproduction():
     """Calculate daily fish population changes"""
@@ -499,6 +504,10 @@ def end_day():
     calculate_reproduction()
     update_hunger()
     check_game_over()
+
+    if app.game.game_over:
+        return
+
     app.game.caught_fish_today = 0
     app.game.day += 1
     app.game.score = app.game.day * (100 - app.game.hunger_level) * (app.game.fish_population / 1000)
