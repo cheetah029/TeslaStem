@@ -6,9 +6,9 @@ def create_game():
     game = Group()
     
     # Initial game parameters
-    game.fish_population = 50  # Reduced from 1000
+    game.fish_population = 30  # Reduced from 50 to make it more challenging
     game.daily_fish_needed = 50
-    game.hunger_level = 0
+    game.food_level = 100  # Changed from hunger_level to food_level, starting at 100%
     game.day = 1
     game.target_days = 20  # New parameter for survival goal
     game.game_over = False
@@ -95,7 +95,7 @@ def create_game():
     game.hunger_bar = Group()
     bar_width = 100
     bar_height = 15
-    bar_x = 120  # Moved right to be next to hunger percentage
+    bar_x = 125  # Moved right to be next to hunger percentage
     bar_y = 53   # Aligned with hunger level text
     corner_radius = 5  # For rounded corners
     
@@ -221,8 +221,8 @@ def create_game():
 
     game.stats.add(
         Label('Day: 1', game.stats.left_position, 20),
-        Label('Fish Population: 50', game.stats.left_position, 40),
-        Label('Hunger Level: 0%', game.stats.left_position, 60),
+        Label('Fish Population: 30', game.stats.left_position, 40),  # Updated initial value
+        Label('Food Level: 100%', game.stats.left_position, 60),  # Changed from Hunger Level
         Label('Caught Today: 0/5', game.stats.left_position, 80)
     )
     
@@ -259,7 +259,21 @@ def create_fish_colors():
 
 def spawn_fish():
     """Spawn new visible fish for catching"""
+    # Adjust max visible fish based on population
+    # At 30 fish: 3 fish on screen
+    # At 20 fish: 2 fish on screen
+    # At 10 fish: 1 fish on screen
+    app.game.max_visible_fish = max(1, min(3, int(1 + app.game.fish_population / 10)))
+    
+    # Adjust spawn rate based on population
+    # Lower population = lower spawn rate
+    spawn_chance = max(0.2, min(1.0, app.game.fish_population / 30))
+    
     while len(app.game.visible_fish) < app.game.max_visible_fish:
+        # Only spawn if random check passes
+        if random.random() > spawn_chance:
+            continue
+            
         # Spawn fish on either side of the screen
         side = random.choice(['left', 'right'])
         x = -50 if side == 'left' else 450  # Start off-screen
@@ -341,6 +355,11 @@ def calculate_reproduction():
     base_growth_rate = 0.05  # Base growth rate
     carrying_capacity = 2000
     
+    # Adjust growth rate based on population size
+    # Lower growth rate when population is small
+    population_factor = max(0.2, min(1.0, app.game.fish_population / 100))
+    base_growth_rate *= population_factor
+    
     # Calculate average size of caught fish
     if app.game.caught_fish_sizes:
         avg_size = sum(app.game.caught_fish_sizes) / len(app.game.caught_fish_sizes)
@@ -359,21 +378,23 @@ def calculate_reproduction():
     app.game.caught_fish_sizes = []
 
 def update_hunger():
-    """Update community hunger based on caught fish"""
+    """Update community food level based on caught fish"""
     fish_deficit = max(0, app.game.daily_fish_needed - app.game.caught_fish_today)
-    app.game.hunger_level += fish_deficit * 0.1
-    if app.game.hunger_level >= 100:
+    app.game.food_level = max(0, app.game.food_level - fish_deficit * 0.5)  # Each fish deficit decreases food by 0.5%
+    if app.game.food_level <= 0:  # Changed condition to check for 0 food
         app.game.game_over = True
 
 def check_game_over():
     """Check if any failure conditions are met or if player has won"""
-    if app.game.hunger_level >= 100:
+    if app.game.food_level <= 0:  # Changed condition to check for 0 food
         app.game.game_over = True
         app.game.game_over_screen.visible = True
         app.game.game_over_screen.toFront()  # Ensure game over screen is on top
         app.game.game_over_screen.children[1].value = 'GAME OVER'  # Set title for lose condition
         app.game.game_over_screen.children[2].value = f'You failed to keep the community fed! Final fish population: {app.game.fish_population}'
         app.game.game_over_screen.children[3].value = ''  # Clear second line
+        update_hunger_bar()  # Update hunger bar immediately when game is over
+        return True  # Return True to indicate game is over
     elif app.game.day >= app.game.target_days:
         app.game.game_over = True
         app.game.game_over_screen.visible = True
@@ -381,6 +402,9 @@ def check_game_over():
         app.game.game_over_screen.children[1].value = 'YOU WIN!'  # Set title for win condition
         app.game.game_over_screen.children[2].value = 'Congratulations! You kept the community fed for 20 days!'
         app.game.game_over_screen.children[3].value = f'Final fish population: {app.game.fish_population}'
+        update_hunger_bar()  # Update hunger bar immediately when game is over
+        return True  # Return True to indicate game is over
+    return False  # Return False if game should continue
 
 def update_trash():
     """Update trash positions and create new trash"""
@@ -411,35 +435,45 @@ def update_trash():
             app.game.trash.remove(trash)
 
 def update_hunger_bar():
-    """Update hunger bar color and size"""
+    """Update food bar color and size"""
     if not app.game.game_over:
         bar = app.game.hunger_bar.children[1]  # The fill bar
-        hunger = app.game.hunger_level
+        food = app.game.food_level
         
-        # Update size
-        bar.width = max(0, 98 * (1 - hunger/100))
+        # Update size (now directly proportional to food level)
+        bar.width = max(0, 98 * (food/100))
         
         # Update color with smooth transitions
-        if hunger < 30:
+        if food > 70:
             bar.fill = rgb(0, 255, 0)
-        elif hunger < 70:
+            bar.opacity = 100  # Full opacity for good food level
+        elif food > 30:
+            # Reset opacity to full when transitioning to warning colors
+            bar.opacity = 100
             # Gradient from green to yellow to red
-            if hunger < 50:
+            if food > 50:
                 # Green to yellow
-                ratio = (hunger - 30) / 20
-                bar.fill = rgb(255 * ratio + 0 * (1-ratio),  # Red component
-                             255,                             # Green component
-                             0)                              # Blue component
+                ratio = (food - 50) / 20
+                bar.fill = rgb(255 * (1-ratio),  # Red component
+                             255,                 # Green component
+                             0)                   # Blue component
             else:
                 # Yellow to red
-                ratio = (hunger - 50) / 20
+                ratio = (food - 30) / 20
                 bar.fill = rgb(255,                          # Red component
-                             255 * (1-ratio),                # Green component
+                             255 * ratio,                    # Green component
                              0)                              # Blue component
         else:
             bar.fill = 'red'
-            # Add pulsing effect when critical
+            # Add pulsing effect when food is low
             bar.opacity = 50 + math.sin(app.game.time * 0.2) * 50
+    else:
+        # Only make bar red if game ended due to no food
+        if app.game.food_level <= 0:
+            bar = app.game.hunger_bar.children[1]  # The fill bar
+            bar.width = 0  # Empty bar
+            bar.fill = 'red'
+            bar.opacity = 100  # Full opacity
 
 def update_fishing_rod():
     """Update fishing line position based on mouse"""
@@ -527,9 +561,9 @@ def try_catch_fish(mouse_x, mouse_y):
             # Update bucket counter
             bucket.children[3].value = f'{app.game.caught_fish_today}/5'
             
-            # Reduce hunger based on fish size (larger fish reduce more hunger)
-            hunger_reduction = fish_size * 0.2  # Each size unit reduces hunger by 0.2%
-            app.game.hunger_level = max(0, app.game.hunger_level - hunger_reduction)
+            # Reduce food level based on fish size (larger fish increase more food)
+            food_increase = fish_size * 0.2  # Each size unit increases food by 0.2%
+            app.game.food_level = min(100, app.game.food_level + food_increase)  # Cap at 100%
             
             # If bucket is now full, automatically end the day
             if app.game.caught_fish_today >= 5:
@@ -554,24 +588,13 @@ def end_day():
     calculate_reproduction()
     update_hunger()
     
-    # Check if we've reached day 20 before incrementing
-    if app.game.day >= app.game.target_days:
-        app.game.game_over = True
-        app.game.game_over_screen.visible = True
-        app.game.game_over_screen.toFront()  # Ensure game over screen is on top
-        app.game.game_over_screen.children[1].value = 'YOU WIN!'  # Set title for win condition
-        app.game.game_over_screen.children[2].value = 'Congratulations! You kept the community fed for 20 days!'
-        app.game.game_over_screen.children[3].value = f'Final fish population: {app.game.fish_population}'
-        return
+    # Check for game over conditions first
+    if check_game_over():
+        return  # End the function if game is over
     
     # Only increment day if we haven't won yet
     app.game.day += 1
     app.game.caught_fish_today = 0
-    
-    # Clean up old fish
-    for fish in app.game.visible_fish:
-        fish.visible = False
-    app.game.visible_fish.clear()
     
     # Update stats display
     update_stats_display()
@@ -585,7 +608,7 @@ def update_stats_display():
     app.game.stats.children[1].value = f'Fish Population: {app.game.fish_population}'
     app.game.stats.children[1].left = app.game.stats.left_position  # Reset left position
     
-    app.game.stats.children[2].value = f'Hunger Level: {int(app.game.hunger_level)}%'
+    app.game.stats.children[2].value = f'Food Level: {int(app.game.food_level)}%'  # Changed from Hunger Level
     app.game.stats.children[2].left = app.game.stats.left_position  # Reset left position
     
     # Calculate average size of caught fish from stored sizes
