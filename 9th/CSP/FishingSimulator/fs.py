@@ -18,21 +18,19 @@ def create_game():
     game = Group()
 
     # Initial game parameters
-    game.fish_population = 30  # Reduced from 50 to make it more challenging
-    game.food_decrease_base = 50  # Base number for calculating daily food decrease
-    game.food_level = 100  # Changed from hunger_level to food_level, starting at 100%
+    game.fish_population = 30
+    game.food_decrease_base = 50
+    game.food_level = 100
     game.day = 1
-    game.target_days = 20  # New parameter for survival goal
+    game.target_days = 20
     game.game_over = False
-    game.time = 0  # For animations
+    game.time = 0
     game.caught_fish_today = 0
-    game.caught_fish_sizes = []  # Track sizes of caught fish
+    game.caught_fish_sizes = []
 
     # Mouse position tracking
     game.mouse_x = 200
     game.mouse_y = 200
-
-    # Fish being dragged
     game.dragged_fish = None
 
     # Bucket dimensions and position
@@ -42,39 +40,32 @@ def create_game():
     game.bucket_x = 350
     game.bucket_y = 120
 
-    # Trash
+    # Trash and fish visualization
     game.trash = Group()
     game.trash_timer = 0
     game.pollution_level = 0
-
-    # Fish visualization
     game.visible_fish = []
     game.max_visible_fish = 3
 
     # Create UI elements
     game.background = Group()
 
-    # Sky
+    # Sky and water
     sky = Rect(0, 0, 400, 400, fill='skyBlue')
+    water = Rect(0, 180, 400, 220, fill=rgb(0, 105, 148))
 
     # Land/Dock
     land = Rect(0, 130, 400, 50, fill=rgb(139, 69, 19))
     land_detail = Rect(0, 130, 400, 10, fill=rgb(101, 67, 33))
 
-    # Add dock posts
-    post1 = Rect(50, 130, 10, 70, fill=rgb(101, 67, 33))
-    post2 = Rect(150, 130, 10, 70, fill=rgb(101, 67, 33))
-    post3 = Rect(250, 130, 10, 70, fill=rgb(101, 67, 33))
-
-    # Water
-    water = Rect(0, 180, 400, 220, fill=rgb(0, 105, 148))
+    # Dock posts
+    for x in [50, 150, 250]:
+        post = Rect(x, 130, 10, 70, fill=rgb(101, 67, 33))
+        game.background.add(post)
 
     # Add background elements
     game.background.add(sky)
     game.background.add(water)
-    game.background.add(post1)
-    game.background.add(post2)
-    game.background.add(post3)
     game.background.add(land)
     game.background.add(land_detail)
     game.background.add(game.trash)
@@ -91,14 +82,11 @@ def create_game():
         fill='silver'
     )
 
-    # Semicircle handle
+    # Handle and rim
     handle_radius = 20
     bucket_handle = Arc(game.bucket_x, game.bucket_y, handle_radius * 2, handle_radius * 2, 
                        -90, 180, fill=None, border='silver', borderWidth=2)
-
-    # Oval rim at top
     bucket_rim = Oval(game.bucket_x, game.bucket_y, game.bucket_top_width, 10, fill=rgb(130, 130, 130))
-
     bucket_counter = Label('0/5', game.bucket_x, game.bucket_y + 20, size=14, bold=True)
 
     game.bucket.add(bucket_body)
@@ -112,20 +100,15 @@ def create_game():
     bar_height = 15
     bar_x = 120
     bar_y = 53
-    corner_radius = 5
 
-    # Background with rounded corners
+    # Background
     bar_bg = Rect(bar_x, bar_y, bar_width, bar_height, fill='darkGray')
-    bar_bg.radius = corner_radius
-
     bar_border = Rect(bar_x, bar_y, bar_width, bar_height, 
                      fill=None, border='black', borderWidth=2)
-    bar_border.radius = corner_radius
 
-    # Inner bar with rounded corners and brighter green
+    # Inner bar
     bar_fill = Rect(bar_x + 1, bar_y + 1, bar_width - 2, bar_height - 2, 
                     fill=rgb(50, 205, 50))
-    bar_fill.radius = corner_radius - 1
 
     # Add shine effect
     shine = Polygon(
@@ -141,10 +124,10 @@ def create_game():
     game.hunger_bar.add(shine)
     game.hunger_bar.add(bar_border)
 
-    # Create fishing rod with hook
+    # Create fishing rod
     game.rod = Group()
 
-    # Rod handle
+    # Rod handle and grip
     handle = Line(0, 100, 80, 100, fill=rgb(139, 69, 19), lineWidth=8)
     handle_grip = Line(-70, 100, 30, 100, fill=rgb(101, 67, 33), lineWidth=10)
 
@@ -159,19 +142,15 @@ def create_game():
         rod_sections.append(section)
 
     # Rod guides
-    guides = []
-    guide_positions = [(100, 105), (130, 120), (160, 135)]
-    for x, y in guide_positions:
+    for x, y in [(100, 105), (130, 120), (160, 135)]:
         guide = Circle(x, y, 3, fill=None, border='silver', borderWidth=1)
-        guides.append(guide)
+        game.rod.add(guide)
 
     # Add all rod parts
     game.rod.add(handle)
     game.rod.add(handle_grip)
     for section in rod_sections:
         game.rod.add(section)
-    for guide in guides:
-        game.rod.add(guide)
     game.rod.rotateAngle = -35
     game.rod.centerY = 150
 
@@ -527,8 +506,10 @@ def update_fishing_rod():
         line = app.game.line.children[0]
         hook = app.game.line.children[1]
 
-        # Get the rod tip position from the last rod section (index 4 since we have handle, grip, and 3 sections)
-        rod_tip = app.game.rod.children[4]  # The last rod section
+        # Get the rod tip position from the last rod section
+        # The rod has 3 guides, handle, grip, and 3 sections
+        # The last section (tip) is at index 7
+        rod_tip = app.game.rod.children[7]  # The last rod section
         rod_tip_x = rod_tip.x2
         rod_tip_y = rod_tip.y2
 
@@ -555,22 +536,6 @@ def try_catch_fish(mouse_x, mouse_y):
     """Attempt to catch a fish at the clicked location"""
     if app.game.game_over:
         return
-
-    # Check if clicking on trash
-    for trash in app.game.trash.children:
-        if trash.hits(mouse_x, mouse_y):
-            app.game.trash.remove(trash)
-            trash.visible = False
-
-            # Calculate minimum pollution based on remaining trash (100 pollution per piece = 20%)
-            remaining_trash = len(app.game.trash.children)
-            min_pollution = remaining_trash * 100
-
-            # Reduce pollution by 30% (150 units), but never below the minimum
-            new_pollution = max(min_pollution, app.game.pollution_level - 150)
-            app.game.pollution_level = new_pollution
-
-            return True
 
     # Get line end position
     line = app.game.line.children[0]
@@ -625,6 +590,23 @@ def try_catch_fish(mouse_x, mouse_y):
             # If bucket is now full, automatically end the day
             if app.game.caught_fish_today >= 5:
                 end_day()
+            return True
+        return False  # If clicking outside bucket while dragging fish, do nothing
+
+    # Check if clicking on trash (only if not dragging a fish)
+    for trash in app.game.trash.children:
+        if trash.hits(mouse_x, mouse_y):
+            app.game.trash.remove(trash)
+            trash.visible = False
+
+            # Calculate minimum pollution based on remaining trash (100 pollution per piece = 20%)
+            remaining_trash = len(app.game.trash.children)
+            min_pollution = remaining_trash * 100
+
+            # Reduce pollution by 30% (150 units), but never below the minimum
+            new_pollution = max(min_pollution, app.game.pollution_level - 150)
+            app.game.pollution_level = new_pollution
+
             return True
 
     # Try to catch new fish (check in reverse order to catch frontmost fish first)
