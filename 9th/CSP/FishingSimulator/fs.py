@@ -350,8 +350,8 @@ def calculate_reproduction():
 def update_hunger():
     """Update community food level based on caught fish"""
     fish_deficit = max(0, app.game.food_decrease_base - app.game.caught_fish_today)
-    app.game.food_level = max(0, app.game.food_level - fish_deficit * 0.5)  # Each fish deficit decreases food by 0.5%
-    if app.game.food_level <= 0:  # Changed condition to check for 0 food
+    app.game.food_level = max(0, app.game.food_level - fish_deficit * 0.5)
+    if app.game.food_level <= 0:
         app.game.game_over = True
 
 def check_game_over():
