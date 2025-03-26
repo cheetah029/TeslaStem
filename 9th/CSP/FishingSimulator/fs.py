@@ -13,10 +13,30 @@ def create_game():
     game.score = 0
     game.caught_fish_today = 0
     game.game_over = False
+    game.time = 0  # For animations
     
     # Mouse position tracking
     game.mouse_x = 200
     game.mouse_y = 200
+    
+    # Fish being dragged
+    game.dragged_fish = None
+    
+    # Bucket dimensions and position (stored in game state)
+    game.bucket_height = 40
+    game.bucket_top_width = 40
+    game.bucket_bottom_width = 25
+    game.bucket_x = 350
+    game.bucket_y = 120  # Moved bucket down
+    
+    # Clouds
+    game.clouds = Group()
+    game.cloud_timer = 0
+    
+    # Trash
+    game.trash = Group()
+    game.trash_timer = 0
+    game.pollution_level = 0
     
     # Upgrade states
     game.upgrades = {
@@ -32,28 +52,98 @@ def create_game():
     # Create UI elements
     game.background = Group()
     
-    # Sky
-    sky = Rect(0, 0, 400, 150, fill='skyBlue')  # Light blue sky
+    # Sky (ensure full coverage)
+    sky = Rect(0, 0, 400, 400, fill='skyBlue')  # Extended to full height
     
     # Land/Dock
-    land = Rect(0, 110, 400, 50, fill=rgb(139, 69, 19))  # Brown dock, moved up
-    land_detail = Rect(0, 110, 400, 10, fill=rgb(101, 67, 33))  # Darker wood detail
+    land = Rect(0, 130, 400, 50, fill=rgb(139, 69, 19))  # Brown dock, moved down
+    land_detail = Rect(0, 130, 400, 10, fill=rgb(101, 67, 33))  # Darker wood detail
+    
+    # Add dock posts
+    post1 = Rect(50, 130, 10, 70, fill=rgb(101, 67, 33))
+    post2 = Rect(150, 130, 10, 70, fill=rgb(101, 67, 33))
+    post3 = Rect(250, 130, 10, 70, fill=rgb(101, 67, 33))
     
     # Water
-    water = Rect(0, 160, 400, 240, fill=rgb(0, 105, 148))  # Deeper blue water, adjusted height
+    water = Rect(0, 180, 400, 220, fill=rgb(0, 105, 148))  # Adjusted water position
+    
+    # Create bucket
+    game.bucket = Group()
+    
+    # Trapezoid body
+    bucket_body = Polygon(
+        game.bucket_x - game.bucket_top_width/2, game.bucket_y,  # Top left
+        game.bucket_x + game.bucket_top_width/2, game.bucket_y,  # Top right
+        game.bucket_x + game.bucket_bottom_width/2, game.bucket_y + game.bucket_height,  # Bottom right
+        game.bucket_x - game.bucket_bottom_width/2, game.bucket_y + game.bucket_height,  # Bottom left
+        fill='silver'
+    )
+    
+    # Semicircle handle (rotated 180 degrees to be right side up)
+    handle_radius = 20
+    bucket_handle = Arc(game.bucket_x, game.bucket_y, handle_radius * 2, handle_radius * 2, 
+                       -90, 180, fill=None, border='silver', borderWidth=2)
+    
+    # Oval rim at top
+    bucket_rim = Oval(game.bucket_x, game.bucket_y, game.bucket_top_width, 10, fill=rgb(130, 130, 130))
+    
+    bucket_counter = Label('0/5', game.bucket_x, game.bucket_y + 20, size=14, bold=True)
+    
+    game.bucket.add(bucket_body)
+    game.bucket.add(bucket_handle)
+    game.bucket.add(bucket_rim)
+    game.bucket.add(bucket_counter)
+    
+    # Create hunger bar with better design (moved up and right)
+    game.hunger_bar = Group()
+    bar_width = 100
+    bar_height = 15
+    bar_x = 150  # Moved right
+    bar_y = 40   # Moved up
+    corner_radius = 5  # For rounded corners
+    
+    # Background with rounded corners
+    bar_bg = Rect(bar_x, bar_y, bar_width, bar_height, fill='darkGray')
+    bar_bg.radius = corner_radius
+    
+    bar_border = Rect(bar_x, bar_y, bar_width, bar_height, 
+                     fill=None, border='black', borderWidth=2)
+    bar_border.radius = corner_radius
+    
+    # Inner bar with rounded corners and brighter green
+    bar_fill = Rect(bar_x + 1, bar_y + 1, bar_width - 2, bar_height - 2, 
+                    fill=rgb(50, 205, 50))  # Brighter green
+    bar_fill.radius = corner_radius - 1
+    
+    # Add shine effect
+    shine = Polygon(
+        bar_x + 1, bar_y + 1,  # Top left
+        bar_x + bar_width - 1, bar_y + 1,  # Top right
+        bar_x + bar_width - 1, bar_y + 4,  # Bottom right
+        bar_x + 1, bar_y + 4,  # Bottom left
+        fill=rgb(255, 255, 255), opacity=20
+    )
+    
+    game.hunger_bar.add(bar_bg)
+    game.hunger_bar.add(bar_fill)
+    game.hunger_bar.add(shine)
+    game.hunger_bar.add(bar_border)
     
     # Add background elements
     game.background.add(sky)
     game.background.add(water)
+    game.background.add(post1)
+    game.background.add(post2)
+    game.background.add(post3)
     game.background.add(land)
     game.background.add(land_detail)
     
-    # Create fishing rod
+    # Create fishing rod with hook
     game.rod = Group()
     
     # Rod handle (brown wood texture) - extended handle
     handle = Line(0, 100, 80, 100, fill=rgb(139, 69, 19), lineWidth=8)  # Extended handle length
-    handle_grip = Line(0, 100, 30, 100, fill=rgb(101, 67, 33), lineWidth=10)  # Longer grip
+    handle_grip = Line(-70, 100, 30, 100, fill=rgb(101, 67, 33), lineWidth=10)  # Longer grip
     
     # Rod body (elegant curve using multiple lines)
     rod_color = rgb(160, 82, 45)  # Lighter brown for rod
@@ -64,11 +154,6 @@ def create_game():
                       curve_points[i+1][0], curve_points[i+1][1],
                       fill=rod_color, lineWidth=4-i*0.8)  # Gradually thinner
         rod_sections.append(section)
-    
-    # Fishing line (thin, slightly transparent)
-    game.line = Group()
-    main_line = Line(180, 140, 180, 140, fill='white', opacity=50, lineWidth=1)
-    game.line.add(main_line)
     
     # Rod guides (line holders)
     guides = []
@@ -84,6 +169,46 @@ def create_game():
         game.rod.add(section)
     for guide in guides:
         game.rod.add(guide)
+    game.rod.rotateAngle = -35
+    game.rod.centerY = 145
+    
+    # Create fishing line with hook after rod is positioned
+    game.line = Group()
+    rod_tip = rod_sections[-1]  # Get the last rod section (the tip)
+    main_line = Line(rod_tip.x2, rod_tip.y2, rod_tip.x2, rod_tip.y2, fill='white', opacity=50, lineWidth=1)
+    
+    # Create hook using smooth line segments
+    hook_size = 6
+    hook_group = Group()
+    
+    # Vertical line
+    hook_line = Line(0, 0, 0, hook_size * 2, fill='black', lineWidth=2)
+    
+    # Curved hook using multiple small line segments
+    curve_points = []
+    segments = 12  # Increased segments for smoother curve
+    for i in range(segments + 1):
+        angle = math.pi * i / segments
+        x = hook_size * math.cos(angle)
+        y = hook_size * 2 + hook_size * math.sin(angle)
+        # Adjust points to connect smoothly to vertical line
+        if i == 0:
+            x = 0  # Start at the bottom of vertical line
+            y = hook_size * 2
+        curve_points.append((x, y))
+    
+    # Create smooth curve using line segments
+    for i in range(len(curve_points) - 1):
+        segment = Line(curve_points[i][0], curve_points[i][1],
+                      curve_points[i+1][0], curve_points[i+1][1],
+                      fill='black', lineWidth=2)
+        hook_group.add(segment)
+    
+    hook_group.add(hook_line)
+    hook_group.rotateAngle = 180  # Rotate hook 180 degrees
+    
+    game.line.add(main_line)
+    game.line.add(hook_group)
     
     # Instructions
     game.instructions = Group(
@@ -217,41 +342,156 @@ def check_game_over():
         app.game.game_over = True
         app.game.game_over_screen.visible = True
 
+def update_clouds():
+    """Update cloud positions and create new clouds"""
+    app.game.cloud_timer += 1
+    
+    # Create new cloud
+    if app.game.cloud_timer >= 200:  # Every ~6 seconds
+        app.game.cloud_timer = 0
+        if len(app.game.clouds.children) < 3:  # Max 3 clouds
+            cloud = create_cloud()
+            app.game.clouds.add(cloud)
+    
+    # Move existing clouds
+    for cloud in app.game.clouds.children:
+        cloud.centerX += 0.5
+        if cloud.centerX > 450:  # Remove when off screen
+            cloud.visible = False
+            app.game.clouds.remove(cloud)
+
+def update_trash():
+    """Update trash positions and create new trash"""
+    app.game.trash_timer += 1
+    
+    # Create new trash
+    if app.game.trash_timer >= 300:  # Every ~10 seconds
+        app.game.trash_timer = 0
+        if len(app.game.trash.children) < 2:  # Max 2 pieces of trash
+            trash = create_trash()
+            trash.centerX = random.choice([-20, 420])  # Start off either edge
+            trash.centerY = random.randint(200, 350)
+            app.game.trash.add(trash)
+    
+    # Move existing trash
+    for trash in app.game.trash.children:
+        if trash.centerX < 200:
+            trash.centerX += 1
+        else:
+            trash.centerX -= 1
+        
+        # Add some vertical movement
+        trash.centerY += math.sin(app.game.time * 0.1) * 0.5
+        
+        # Remove if off screen
+        if trash.centerX < -50 or trash.centerX > 450:
+            trash.visible = False
+            app.game.trash.remove(trash)
+
+def update_hunger_bar():
+    """Update hunger bar color and size"""
+    if not app.game.game_over:
+        bar = app.game.hunger_bar.children[1]  # The fill bar
+        hunger = app.game.hunger_level
+        
+        # Update size
+        bar.width = max(0, 98 * (1 - hunger/100))
+        
+        # Update color with smooth transitions
+        if hunger < 30:
+            bar.fill = 'green'
+        elif hunger < 70:
+            # Gradient from green to yellow to red
+            if hunger < 50:
+                # Green to yellow
+                ratio = (hunger - 30) / 20
+                bar.fill = rgb(255 * ratio + 0 * (1-ratio),  # Red component
+                             255,                             # Green component
+                             0)                              # Blue component
+            else:
+                # Yellow to red
+                ratio = (hunger - 50) / 20
+                bar.fill = rgb(255,                          # Red component
+                             255 * (1-ratio),                # Green component
+                             0)                              # Blue component
+        else:
+            bar.fill = 'red'
+            # Add pulsing effect when critical
+            bar.opacity = 50 + math.sin(app.game.time * 0.2) * 50
+
 def update_fishing_rod():
     """Update fishing line position based on mouse"""
     if not app.game.game_over:
         # Update line position
         line = app.game.line.children[0]
-        rod_tip_x, rod_tip_y = 180, 140  # Updated rod tip position
+        hook = app.game.line.children[1]
+        
+        # Get the rod tip position from the last rod section (index 4 since we have handle, grip, and 3 sections)
+        rod_tip = app.game.rod.children[4]  # The last rod section
+        rod_tip_x = rod_tip.x2
+        rod_tip_y = rod_tip.y2
+        
+        # Update line start position to rod tip
+        line.x1 = rod_tip_x
+        line.y1 = rod_tip_y
         
         # Calculate line angle and length
         dx = app.game.mouse_x - rod_tip_x
         dy = app.game.mouse_y - rod_tip_y
-        length = min(math.sqrt(dx*dx + dy*dy), 300)  # Increased line length limit to 300
+        length = min(math.sqrt(dx*dx + dy*dy), 300)
         
-        # Update line end point
+        # Update line end point with slight lag
         angle = math.atan2(dy, dx)
         line.x2 = rod_tip_x + length * math.cos(angle)
         line.y2 = rod_tip_y + length * math.sin(angle)
+        
+        # Update hook position and rotation
+        hook.centerX = line.x2
+        hook.centerY = line.y2
+        hook.rotateAngle = math.degrees(angle) + 270  # Adjusted to keep hook oriented correctly
 
 def try_catch_fish(mouse_x, mouse_y):
     """Attempt to catch a fish at the clicked location"""
     if app.game.game_over:
         return
     
+    # Check if clicking on trash
+    for trash in app.game.trash.children:
+        if trash.hits(mouse_x, mouse_y):
+            app.game.trash.remove(trash)
+            trash.visible = False
+            app.game.pollution_level = max(0, app.game.pollution_level - 10)
+            return True
+    
     # Get line end position
     line = app.game.line.children[0]
     hook_x, hook_y = line.x2, line.y2
     
+    # Check if clicking near bucket with dragged fish
+    if app.game.dragged_fish:
+        bucket = app.game.bucket
+        # Use bucket dimensions from game state for hit detection
+        if (mouse_x > bucket.centerX - app.game.bucket_top_width/2 and 
+            mouse_x < bucket.centerX + app.game.bucket_top_width/2 and
+            mouse_y > bucket.centerY - app.game.bucket_height/2 and 
+            mouse_y < bucket.centerY + app.game.bucket_height/2):
+            app.game.caught_fish_today += 1
+            if app.game.dragged_fish in app.game.visible_fish:
+                app.game.visible_fish.remove(app.game.dragged_fish)  # Remove from list if present
+            app.game.dragged_fish.visible = False
+            app.game.dragged_fish = None
+            # Update bucket counter
+            bucket.children[3].value = f'{app.game.caught_fish_today}/5'
+            return True
+    
+    # Try to catch new fish
     for fish in app.game.visible_fish[:]:
-        # Get the fish body
         fish_body = fish.children[1]
         distance = math.sqrt((fish.centerX - hook_x)**2 + (fish.centerY - hook_y)**2)
         if distance < fish_body.fish_size:
-            app.game.caught_fish_today += 1 * app.game.upgrades['net'] * app.game.upgrades['bait']
-            app.game.visible_fish.remove(fish)
-            fish.visible = False
+            app.game.dragged_fish = fish
             return True
+    
     return False
 
 def end_day():
@@ -281,14 +521,56 @@ def update_stats_display():
     if app.game.game_over:
         app.game.game_over_screen.children[2].value = f'Final Score: {int(app.game.score)}'
 
+def create_cloud():
+    """Create a cloud shape"""
+    cloud = Group()
+    # Random cloud size and position
+    size = random.randint(30, 50)
+    y = random.randint(20, 80)
+    
+    # Create cloud using overlapping circles
+    main = Circle(-size, y, size/2, fill='white', opacity=80)
+    part1 = Circle(-size+size/3, y-size/4, size/3, fill='white', opacity=80)
+    part2 = Circle(-size+size/2, y, size/3, fill='white', opacity=80)
+    part3 = Circle(-size+size/3, y+size/4, size/3, fill='white', opacity=80)
+    
+    cloud.add(main)
+    cloud.add(part1)
+    cloud.add(part2)
+    cloud.add(part3)
+    return cloud
+
+def create_trash():
+    """Create a piece of floating trash"""
+    trash_types = [
+        ('bottle', Circle(0, 0, 8, fill='lightGray')),
+        ('bag', Rect(-8, -8, 16, 16, fill='white', opacity=50)),
+        ('can', Rect(-6, -8, 12, 16, fill='silver'))
+    ]
+    
+    trash_group = Group()
+    trash_type, shape = random.choice(trash_types)
+    trash_group.add(shape)
+    trash_group.trash_type = trash_type
+    return trash_group
+
 def onAppStart():
     app.game = create_game()
     app.stepsPerSecond = 30
 
 def onStep():
     if not app.game.game_over:
+        app.game.time += 1
         spawn_fish()
         update_fishing_rod()
+        update_clouds()
+        update_trash()
+        update_hunger_bar()
+        
+        # Update dragged fish position
+        if app.game.dragged_fish:
+            app.game.dragged_fish.centerX = app.game.mouse_x
+            app.game.dragged_fish.centerY = app.game.mouse_y
     update_stats_display()
 
 def onMousePress(mouseX, mouseY):
