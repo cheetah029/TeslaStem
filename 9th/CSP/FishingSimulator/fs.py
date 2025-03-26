@@ -129,7 +129,7 @@ def create_game():
     game.hunger_bar.add(shine)
     game.hunger_bar.add(bar_border)
     
-    # Add background elements in correct order
+    # Add background elements
     game.background.add(sky)
     game.background.add(water)
     game.background.add(post1)
@@ -137,10 +137,6 @@ def create_game():
     game.background.add(post3)
     game.background.add(land)
     game.background.add(land_detail)
-    
-    # Create a separate group for fish to ensure they're behind the rod and line
-    game.fish_layer = Group()
-    game.background.add(game.fish_layer)
     
     # Create fishing rod with hook
     game.rod = Group()
@@ -325,7 +321,6 @@ def spawn_fish():
         fish_group.centerY = y
         
         app.game.visible_fish.append(fish_group)
-        app.game.fish_layer.add(fish_group)  # Add to the fish layer group
 
 def calculate_reproduction():
     """Calculate daily fish population changes"""
@@ -404,7 +399,7 @@ def update_hunger_bar():
         
         # Update color with smooth transitions
         if hunger < 30:
-            bar.fill = 'green'
+            bar.fill = rgb(0, 255, 0)
         elif hunger < 70:
             # Gradient from green to yellow to red
             if hunger < 50:
@@ -475,6 +470,10 @@ def try_catch_fish(mouse_x, mouse_y):
     # Check if clicking near bucket with dragged fish
     if app.game.dragged_fish:
         bucket = app.game.bucket
+        # Check if bucket is full
+        if app.game.caught_fish_today >= 5:
+            return False  # Can't add more fish if bucket is full
+            
         # Use bucket dimensions from game state for hit detection
         if (mouse_x > bucket.centerX - app.game.bucket_top_width/2 and 
             mouse_x < bucket.centerX + app.game.bucket_top_width/2 and
@@ -487,6 +486,10 @@ def try_catch_fish(mouse_x, mouse_y):
             app.game.dragged_fish = None
             # Update bucket counter
             bucket.children[3].value = f'{app.game.caught_fish_today}/5'
+            
+            # If bucket is now full, automatically end the day
+            if app.game.caught_fish_today >= 5:
+                end_day()
             return True
     
     # Try to catch new fish
@@ -494,8 +497,10 @@ def try_catch_fish(mouse_x, mouse_y):
         fish_body = fish.children[1]
         distance = math.sqrt((fish.centerX - hook_x)**2 + (fish.centerY - hook_y)**2)
         if distance < fish_body.fish_size:
-            app.game.dragged_fish = fish
-            return True
+            # Only allow catching if bucket isn't full
+            if app.game.caught_fish_today < 5:
+                app.game.dragged_fish = fish
+                return True
     
     return False
 
@@ -504,10 +509,6 @@ def end_day():
     calculate_reproduction()
     update_hunger()
     check_game_over()
-
-    if app.game.game_over:
-        return
-
     app.game.caught_fish_today = 0
     app.game.day += 1
     app.game.score = app.game.day * (100 - app.game.hunger_level) * (app.game.fish_population / 1000)
