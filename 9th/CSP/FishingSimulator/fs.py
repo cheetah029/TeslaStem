@@ -35,38 +35,31 @@ def create_game():
     # Fish being dragged
     game.dragged_fish = None
 
-    # Bucket dimensions and position (stored in game state)
+    # Bucket dimensions and position
     game.bucket_height = 40
     game.bucket_top_width = 40
     game.bucket_bottom_width = 25
     game.bucket_x = 350
-    game.bucket_y = 120  # Moved bucket down
+    game.bucket_y = 120
 
     # Trash
     game.trash = Group()
     game.trash_timer = 0
     game.pollution_level = 0
 
-    # Upgrade states
-    game.upgrades = {
-        'net': 1,  # Fishing efficiency multiplier
-        'patrol': 1,  # Illegal fishing prevention
-        'bait': 1,  # Catch rate multiplier
-    }
-
     # Fish visualization
     game.visible_fish = []
-    game.max_visible_fish = 3  # Reduced from 5 to 3
+    game.max_visible_fish = 3
 
     # Create UI elements
     game.background = Group()
 
-    # Sky (ensure full coverage)
-    sky = Rect(0, 0, 400, 400, fill='skyBlue')  # Extended to full height
+    # Sky
+    sky = Rect(0, 0, 400, 400, fill='skyBlue')
 
     # Land/Dock
-    land = Rect(0, 130, 400, 50, fill=rgb(139, 69, 19))  # Brown dock, moved down
-    land_detail = Rect(0, 130, 400, 10, fill=rgb(101, 67, 33))  # Darker wood detail
+    land = Rect(0, 130, 400, 50, fill=rgb(139, 69, 19))
+    land_detail = Rect(0, 130, 400, 10, fill=rgb(101, 67, 33))
 
     # Add dock posts
     post1 = Rect(50, 130, 10, 70, fill=rgb(101, 67, 33))
@@ -74,7 +67,7 @@ def create_game():
     post3 = Rect(250, 130, 10, 70, fill=rgb(101, 67, 33))
 
     # Water
-    water = Rect(0, 180, 400, 220, fill=rgb(0, 105, 148))  # Adjusted water position
+    water = Rect(0, 180, 400, 220, fill=rgb(0, 105, 148))
 
     # Add background elements
     game.background.add(sky)
@@ -84,21 +77,21 @@ def create_game():
     game.background.add(post3)
     game.background.add(land)
     game.background.add(land_detail)
-    game.background.add(game.trash)  # Add trash group to background
+    game.background.add(game.trash)
 
     # Create bucket
     game.bucket = Group()
 
     # Trapezoid body
     bucket_body = Polygon(
-        game.bucket_x - game.bucket_top_width/2, game.bucket_y,  # Top left
-        game.bucket_x + game.bucket_top_width/2, game.bucket_y,  # Top right
-        game.bucket_x + game.bucket_bottom_width/2, game.bucket_y + game.bucket_height,  # Bottom right
-        game.bucket_x - game.bucket_bottom_width/2, game.bucket_y + game.bucket_height,  # Bottom left
+        game.bucket_x - game.bucket_top_width/2, game.bucket_y,
+        game.bucket_x + game.bucket_top_width/2, game.bucket_y,
+        game.bucket_x + game.bucket_bottom_width/2, game.bucket_y + game.bucket_height,
+        game.bucket_x - game.bucket_bottom_width/2, game.bucket_y + game.bucket_height,
         fill='silver'
     )
 
-    # Semicircle handle (rotated 180 degrees to be right side up)
+    # Semicircle handle
     handle_radius = 20
     bucket_handle = Arc(game.bucket_x, game.bucket_y, handle_radius * 2, handle_radius * 2, 
                        -90, 180, fill=None, border='silver', borderWidth=2)
@@ -113,13 +106,13 @@ def create_game():
     game.bucket.add(bucket_rim)
     game.bucket.add(bucket_counter)
 
-    # Create hunger bar with better design (moved up and right)
+    # Create hunger bar
     game.hunger_bar = Group()
     bar_width = 100
     bar_height = 15
-    bar_x = 120  # Moved right to be next to hunger percentage
-    bar_y = 53   # Aligned with hunger level text
-    corner_radius = 5  # For rounded corners
+    bar_x = 120
+    bar_y = 53
+    corner_radius = 5
 
     # Background with rounded corners
     bar_bg = Rect(bar_x, bar_y, bar_width, bar_height, fill='darkGray')
@@ -131,15 +124,15 @@ def create_game():
 
     # Inner bar with rounded corners and brighter green
     bar_fill = Rect(bar_x + 1, bar_y + 1, bar_width - 2, bar_height - 2, 
-                    fill=rgb(50, 205, 50))  # Brighter green
+                    fill=rgb(50, 205, 50))
     bar_fill.radius = corner_radius - 1
 
     # Add shine effect
     shine = Polygon(
-        bar_x + 1, bar_y + 1,  # Top left
-        bar_x + bar_width - 1, bar_y + 1,  # Top right
-        bar_x + bar_width - 1, bar_y + 4,  # Bottom right
-        bar_x + 1, bar_y + 4,  # Bottom left
+        bar_x + 1, bar_y + 1,
+        bar_x + bar_width - 1, bar_y + 1,
+        bar_x + bar_width - 1, bar_y + 4,
+        bar_x + 1, bar_y + 4,
         fill=rgb(255, 255, 255), opacity=20
     )
 
@@ -151,23 +144,23 @@ def create_game():
     # Create fishing rod with hook
     game.rod = Group()
 
-    # Rod handle (brown wood texture) - extended handle
-    handle = Line(0, 100, 80, 100, fill=rgb(139, 69, 19), lineWidth=8)  # Extended handle length
-    handle_grip = Line(-70, 100, 30, 100, fill=rgb(101, 67, 33), lineWidth=10)  # Longer grip
+    # Rod handle
+    handle = Line(0, 100, 80, 100, fill=rgb(139, 69, 19), lineWidth=8)
+    handle_grip = Line(-70, 100, 30, 100, fill=rgb(101, 67, 33), lineWidth=10)
 
-    # Rod body (elegant curve using multiple lines)
-    rod_color = rgb(160, 82, 45)  # Lighter brown for rod
+    # Rod body
+    rod_color = rgb(160, 82, 45)
     rod_sections = []
-    curve_points = [(80, 100), (120, 110), (160, 130), (180, 140)]  # Adjusted curve points to match new handle
+    curve_points = [(80, 100), (120, 110), (160, 130), (180, 140)]
     for i in range(len(curve_points)-1):
         section = Line(curve_points[i][0], curve_points[i][1],
                       curve_points[i+1][0], curve_points[i+1][1],
-                      fill=rod_color, lineWidth=4-i*0.8)  # Gradually thinner
+                      fill=rod_color, lineWidth=4-i*0.8)
         rod_sections.append(section)
 
-    # Rod guides (line holders)
+    # Rod guides
     guides = []
-    guide_positions = [(100, 105), (130, 120), (160, 135)]  # Adjusted guide positions
+    guide_positions = [(100, 105), (130, 120), (160, 135)]
     for x, y in guide_positions:
         guide = Circle(x, y, 3, fill=None, border='silver', borderWidth=1)
         guides.append(guide)
@@ -182,32 +175,31 @@ def create_game():
     game.rod.rotateAngle = -35
     game.rod.centerY = 150
 
-    # Create fishing line with hook after rod is positioned
+    # Create fishing line with hook
     game.line = Group()
-    rod_tip = rod_sections[-1]  # Get the last rod section (the tip)
+    rod_tip = rod_sections[-1]
     main_line = Line(rod_tip.x2, rod_tip.y2, rod_tip.x2, rod_tip.y2, fill='white', opacity=50, lineWidth=1)
 
-    # Create hook using smooth line segments
+    # Create hook
     hook_size = 6
     hook_group = Group()
 
     # Vertical line
     hook_line = Line(0, 0, 0, hook_size * 2, fill='black', lineWidth=2)
 
-    # Curved hook using multiple small line segments
+    # Curved hook
     curve_points = []
-    segments = 12  # Increased segments for smoother curve
+    segments = 12
     for i in range(segments + 1):
         angle = math.pi * i / segments
         x = hook_size * math.cos(angle)
         y = hook_size * 2 + hook_size * math.sin(angle)
-        # Adjust points to connect smoothly to vertical line
         if i == 0:
-            x = 0  # Start at the bottom of vertical line
+            x = 0
             y = hook_size * 2
         curve_points.append((x, y))
 
-    # Create smooth curve using line segments
+    # Create smooth curve
     for i in range(len(curve_points) - 1):
         segment = Line(curve_points[i][0], curve_points[i][1],
                       curve_points[i+1][0], curve_points[i+1][1],
@@ -215,7 +207,7 @@ def create_game():
         hook_group.add(segment)
 
     hook_group.add(hook_line)
-    hook_group.rotateAngle = 180  # Rotate hook 180 degrees
+    hook_group.rotateAngle = 180
 
     game.line.add(main_line)
     game.line.add(hook_group)
@@ -228,28 +220,28 @@ def create_game():
         Label('Catch enough fish to feed the community, but don\'t overfish!', 200, 390, size=14)
     )
 
-    # Stats display with consistent left alignment
+    # Stats display
     game.stats = Group()
     game.stats.left_position = 15
 
     game.stats.add(
         Label('Day: 1', game.stats.left_position, 20),
-        Label('Fish Population: 30', game.stats.left_position, 40),  # Updated initial value
-        Label('Food Level: 100%', game.stats.left_position, 60),  # Changed from Hunger Level
+        Label('Fish Population: 30', game.stats.left_position, 40),
+        Label('Food Level: 100%', game.stats.left_position, 60),
         Label('Caught Today: 0/5', game.stats.left_position, 80)
     )
 
-    # Game over screen (initially hidden)
+    # Game over screen
     game_over_overlay = Rect(0, 0, 400, 400, fill=rgb(0, 0, 0), opacity=60)
     game.game_over_screen = Group(
         game_over_overlay,
-        Label('GAME OVER', 200, 180, size=30, fill='white'),  # Will be updated for win condition
-        Label('', 200, 220, fill='white'),  # Will be updated with win/lose message
-        Label('', 200, 240, fill='white'),  # Second line for win message
+        Label('GAME OVER', 200, 180, size=30, fill='white'),
+        Label('', 200, 220, fill='white'),
+        Label('', 200, 240, fill='white'),
         Label('Press R to restart', 200, 280, fill='white')
     )
     game.game_over_screen.visible = False
-    game.game_over_screen.toFront()  # Ensure game over screen is on top
+    game.game_over_screen.toFront()
 
     return game
 
