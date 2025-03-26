@@ -6,15 +6,15 @@ def create_game():
     game = Group()
     
     # Initial game parameters
-    game.fish_population = 1000
+    game.fish_population = 50  # Reduced from 1000
     game.daily_fish_needed = 50
     game.hunger_level = 0
     game.day = 1
-    game.score = 0
-    game.caught_fish_today = 0
-    game.caught_fish_sizes = []  # Track sizes of caught fish
+    game.target_days = 20  # New parameter for survival goal
     game.game_over = False
     game.time = 0  # For animations
+    game.caught_fish_today = 0
+    game.caught_fish_sizes = []  # Track sizes of caught fish
     
     # Mouse position tracking
     game.mouse_x = 200
@@ -99,8 +99,8 @@ def create_game():
     game.hunger_bar = Group()
     bar_width = 100
     bar_height = 15
-    bar_x = 150  # Moved right
-    bar_y = 40   # Moved up
+    bar_x = 120  # Moved right to be next to hunger percentage
+    bar_y = 53   # Aligned with hunger level text
     corner_radius = 5  # For rounded corners
     
     # Background with rounded corners
@@ -213,18 +213,21 @@ def create_game():
     
     # Instructions
     game.instructions = Group(
-        Label('Sustainable Fishing Simulator', 200, 20, size=16, bold=True),
+        Label('Sustainable Fishing Simulator', 200, 16, size=16, bold=True),
         Label('Use the fishing rod to catch fish', 200, 350, size=14),
         Label('Press D to end the day', 200, 370, size=14),
         Label('Catch enough fish to feed the community!', 200, 390, size=14)
     )
     
-    # Stats display
-    game.stats = Group(
-        Label('Day: 1', 20, 20, align='left'),
-        Label('Fish Population: 1000', 20, 40, align='left'),
-        Label('Hunger Level: 0%', 20, 60, align='left'),
-        Label('Caught Today: 0/50', 20, 80, align='left')
+    # Stats display with consistent left alignment
+    game.stats = Group()
+    game.stats.left_position = 15
+
+    game.stats.add(
+        Label('Day: 1', game.stats.left_position, 20),
+        Label('Fish Population: 50', game.stats.left_position, 40),
+        Label('Hunger Level: 0%', game.stats.left_position, 60),
+        Label('Caught Today: 0/5', game.stats.left_position, 80)
     )
     
     # Game over screen (initially hidden)
@@ -232,10 +235,12 @@ def create_game():
     game.game_over_screen = Group(
         game_over_overlay,
         Label('GAME OVER', 200, 180, size=30, fill='white'),
-        Label('Final Score: 0', 200, 220, fill='white'),
-        Label('Press R to restart', 200, 260, fill='white')
+        Label('', 200, 220, fill='white'),  # Will be updated with win/lose message
+        Label('', 200, 240, fill='white'),  # Second line for win message
+        Label('Press R to restart', 200, 280, fill='white')
     )
     game.game_over_screen.visible = False
+    game.game_over_screen.toFront()  # Ensure game over screen is on top
     
     return game
 
@@ -337,17 +342,16 @@ def spawn_fish():
 
 def calculate_reproduction():
     """Calculate daily fish population changes"""
-    growth_rate = 0.1
+    growth_rate = 0.05  # Reduced from 0.1
     carrying_capacity = 2000
     
     # Calculate total size of caught fish from the stored sizes
     total_caught_size = sum(app.game.caught_fish_sizes)
     
-    # Larger fish reduce population more
-    population_reduction = total_caught_size * 0.5  # Each size unit reduces population by 0.5
-    
+    # Larger fish reduce population more (but we've already reduced the population when catching)
+    # So we don't need to reduce it again here
     reproduction = app.game.fish_population * growth_rate * (1 - app.game.fish_population / carrying_capacity)
-    app.game.fish_population = max(0, int(app.game.fish_population + reproduction - population_reduction))
+    app.game.fish_population = max(0, int(app.game.fish_population + reproduction))
     
     # Clear the caught fish sizes for the next day
     app.game.caught_fish_sizes = []
@@ -360,10 +364,19 @@ def update_hunger():
         app.game.game_over = True
 
 def check_game_over():
-    """Check if any failure conditions are met"""
-    if app.game.fish_population <= 0 or app.game.hunger_level >= 100:
+    """Check if any failure conditions are met or if player has won"""
+    if app.game.hunger_level >= 100:
         app.game.game_over = True
         app.game.game_over_screen.visible = True
+        app.game.game_over_screen.toFront()  # Ensure game over screen is on top
+        app.game.game_over_screen.children[2].value = f'You failed to keep the community fed! Final fish population: {app.game.fish_population}'
+        app.game.game_over_screen.children[3].value = ''  # Clear second line
+    elif app.game.day >= app.game.target_days:
+        app.game.game_over = True
+        app.game.game_over_screen.visible = True
+        app.game.game_over_screen.toFront()  # Ensure game over screen is on top
+        app.game.game_over_screen.children[2].value = 'Congratulations! You kept the community fed for 20 days!'
+        app.game.game_over_screen.children[3].value = f'Final fish population: {app.game.fish_population}'
 
 def update_clouds():
     """Update cloud positions and create new clouds"""
@@ -512,6 +525,19 @@ def try_catch_fish(mouse_x, mouse_y):
             fish_size = app.game.dragged_fish.children[1].fish_size
             app.game.caught_fish_sizes.append(fish_size)
             
+            # Reduce fish population based on size
+            population_reduction = fish_size * 0.5  # Each size unit reduces population by 0.5
+            app.game.fish_population = max(0, int(app.game.fish_population - population_reduction))
+            
+            # Check if population reached 0
+            if app.game.fish_population <= 0:
+                app.game.game_over = True
+                app.game.game_over_screen.visible = True
+                app.game.game_over_screen.toFront()  # Ensure game over screen is on top
+                app.game.game_over_screen.children[2].value = f'Game Over! The fish population has been depleted!'
+                app.game.game_over_screen.children[3].value = ''  # Clear second line
+                return True
+            
             app.game.dragged_fish = None
             # Update bucket counter
             bucket.children[3].value = f'{app.game.caught_fish_today}/5'
@@ -545,7 +571,6 @@ def end_day():
     check_game_over()
     app.game.caught_fish_today = 0
     app.game.day += 1
-    app.game.score = app.game.day * (100 - app.game.hunger_level) * (app.game.fish_population / 1000)
     
     # Clean up old fish
     for fish in app.game.visible_fish:
@@ -557,9 +582,15 @@ def end_day():
 
 def update_stats_display():
     """Update the display of game statistics"""
-    app.game.stats.children[0].value = f'Day: {app.game.day}'
+    # Update values while maintaining left alignment
+    app.game.stats.children[0].value = f'Day: {app.game.day}/{app.game.target_days}'
+    app.game.stats.children[0].left = app.game.stats.left_position  # Reset left position
+    
     app.game.stats.children[1].value = f'Fish Population: {app.game.fish_population}'
+    app.game.stats.children[1].left = app.game.stats.left_position  # Reset left position
+    
     app.game.stats.children[2].value = f'Hunger Level: {int(app.game.hunger_level)}%'
+    app.game.stats.children[2].left = app.game.stats.left_position  # Reset left position
     
     # Calculate average size of caught fish from stored sizes
     if app.game.caught_fish_sizes:
@@ -567,9 +598,7 @@ def update_stats_display():
         app.game.stats.children[3].value = f'Caught Today: {app.game.caught_fish_today}/5 (Avg Size: {int(avg_size)})'
     else:
         app.game.stats.children[3].value = f'Caught Today: {app.game.caught_fish_today}/5'
-    
-    if app.game.game_over:
-        app.game.game_over_screen.children[2].value = f'Final Score: {int(app.game.score)}'
+    app.game.stats.children[3].left = app.game.stats.left_position  # Reset left position
 
 def create_cloud():
     """Create a cloud shape"""
