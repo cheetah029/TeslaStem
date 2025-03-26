@@ -30,10 +30,6 @@ def create_game():
     game.bucket_x = 350
     game.bucket_y = 120  # Moved bucket down
     
-    # Clouds
-    game.clouds = Group()
-    game.cloud_timer = 0
-    
     # Trash
     game.trash = Group()
     game.trash_timer = 0
@@ -234,7 +230,7 @@ def create_game():
     game_over_overlay = Rect(0, 0, 400, 400, fill=rgb(0, 0, 0), opacity=60)
     game.game_over_screen = Group(
         game_over_overlay,
-        Label('GAME OVER', 200, 180, size=30, fill='white'),
+        Label('GAME OVER', 200, 180, size=30, fill='white'),  # Will be updated for win condition
         Label('', 200, 220, fill='white'),  # Will be updated with win/lose message
         Label('', 200, 240, fill='white'),  # Second line for win message
         Label('Press R to restart', 200, 280, fill='white')
@@ -342,14 +338,20 @@ def spawn_fish():
 
 def calculate_reproduction():
     """Calculate daily fish population changes"""
-    growth_rate = 0.05  # Reduced from 0.1
+    base_growth_rate = 0.05  # Base growth rate
     carrying_capacity = 2000
     
-    # Calculate total size of caught fish from the stored sizes
-    total_caught_size = sum(app.game.caught_fish_sizes)
+    # Calculate average size of caught fish
+    if app.game.caught_fish_sizes:
+        avg_size = sum(app.game.caught_fish_sizes) / len(app.game.caught_fish_sizes)
+        # Larger fish reduce reproduction rate more
+        # Each size unit above 40 reduces growth rate by 0.001
+        size_penalty = max(0, (avg_size - 40) * 0.001)
+        growth_rate = max(0.01, base_growth_rate - size_penalty)  # Minimum growth rate of 0.01
+    else:
+        growth_rate = base_growth_rate
     
-    # Larger fish reduce population more (but we've already reduced the population when catching)
-    # So we don't need to reduce it again here
+    # Calculate reproduction with size-adjusted growth rate
     reproduction = app.game.fish_population * growth_rate * (1 - app.game.fish_population / carrying_capacity)
     app.game.fish_population = max(0, int(app.game.fish_population + reproduction))
     
@@ -369,32 +371,16 @@ def check_game_over():
         app.game.game_over = True
         app.game.game_over_screen.visible = True
         app.game.game_over_screen.toFront()  # Ensure game over screen is on top
+        app.game.game_over_screen.children[1].value = 'GAME OVER'  # Set title for lose condition
         app.game.game_over_screen.children[2].value = f'You failed to keep the community fed! Final fish population: {app.game.fish_population}'
         app.game.game_over_screen.children[3].value = ''  # Clear second line
     elif app.game.day >= app.game.target_days:
         app.game.game_over = True
         app.game.game_over_screen.visible = True
         app.game.game_over_screen.toFront()  # Ensure game over screen is on top
+        app.game.game_over_screen.children[1].value = 'YOU WIN!'  # Set title for win condition
         app.game.game_over_screen.children[2].value = 'Congratulations! You kept the community fed for 20 days!'
         app.game.game_over_screen.children[3].value = f'Final fish population: {app.game.fish_population}'
-
-def update_clouds():
-    """Update cloud positions and create new clouds"""
-    app.game.cloud_timer += 1
-    
-    # Create new cloud
-    if app.game.cloud_timer >= 200:  # Every ~6 seconds
-        app.game.cloud_timer = 0
-        if len(app.game.clouds.children) < 3:  # Max 3 clouds
-            cloud = create_cloud()
-            app.game.clouds.add(cloud)
-    
-    # Move existing clouds
-    for cloud in app.game.clouds.children:
-        cloud.centerX += 0.5
-        if cloud.centerX > 450:  # Remove when off screen
-            cloud.visible = False
-            app.game.clouds.remove(cloud)
 
 def update_trash():
     """Update trash positions and create new trash"""
@@ -525,9 +511,8 @@ def try_catch_fish(mouse_x, mouse_y):
             fish_size = app.game.dragged_fish.children[1].fish_size
             app.game.caught_fish_sizes.append(fish_size)
             
-            # Reduce fish population based on size
-            population_reduction = fish_size * 0.5  # Each size unit reduces population by 0.5
-            app.game.fish_population = max(0, int(app.game.fish_population - population_reduction))
+            # Reduce fish population by 1
+            app.game.fish_population = max(0, app.game.fish_population - 1)
             
             # Check if population reached 0
             if app.game.fish_population <= 0:
@@ -568,9 +553,20 @@ def end_day():
     """Process end of day events"""
     calculate_reproduction()
     update_hunger()
-    check_game_over()
-    app.game.caught_fish_today = 0
+    
+    # Check if we've reached day 20 before incrementing
+    if app.game.day >= app.game.target_days:
+        app.game.game_over = True
+        app.game.game_over_screen.visible = True
+        app.game.game_over_screen.toFront()  # Ensure game over screen is on top
+        app.game.game_over_screen.children[1].value = 'YOU WIN!'  # Set title for win condition
+        app.game.game_over_screen.children[2].value = 'Congratulations! You kept the community fed for 20 days!'
+        app.game.game_over_screen.children[3].value = f'Final fish population: {app.game.fish_population}'
+        return
+    
+    # Only increment day if we haven't won yet
     app.game.day += 1
+    app.game.caught_fish_today = 0
     
     # Clean up old fish
     for fish in app.game.visible_fish:
@@ -600,25 +596,6 @@ def update_stats_display():
         app.game.stats.children[3].value = f'Caught Today: {app.game.caught_fish_today}/5'
     app.game.stats.children[3].left = app.game.stats.left_position  # Reset left position
 
-def create_cloud():
-    """Create a cloud shape"""
-    cloud = Group()
-    # Random cloud size and position
-    size = random.randint(30, 50)
-    y = random.randint(20, 80)
-    
-    # Create cloud using overlapping circles
-    main = Circle(-size, y, size/2, fill='white', opacity=80)
-    part1 = Circle(-size+size/3, y-size/4, size/3, fill='white', opacity=80)
-    part2 = Circle(-size+size/2, y, size/3, fill='white', opacity=80)
-    part3 = Circle(-size+size/3, y+size/4, size/3, fill='white', opacity=80)
-    
-    cloud.add(main)
-    cloud.add(part1)
-    cloud.add(part2)
-    cloud.add(part3)
-    return cloud
-
 def create_trash():
     """Create a piece of floating trash"""
     trash_types = [
@@ -642,7 +619,6 @@ def onStep():
         app.game.time += 1
         spawn_fish()
         update_fishing_rod()
-        update_clouds()
         update_trash()
         update_hunger_bar()
         
