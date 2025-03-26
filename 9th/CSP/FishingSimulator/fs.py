@@ -12,6 +12,7 @@ def create_game():
     game.day = 1
     game.score = 0
     game.caught_fish_today = 0
+    game.caught_fish_sizes = []  # Track sizes of caught fish
     game.game_over = False
     game.time = 0  # For animations
     
@@ -338,8 +339,18 @@ def calculate_reproduction():
     """Calculate daily fish population changes"""
     growth_rate = 0.1
     carrying_capacity = 2000
+    
+    # Calculate total size of caught fish from the stored sizes
+    total_caught_size = sum(app.game.caught_fish_sizes)
+    
+    # Larger fish reduce population more
+    population_reduction = total_caught_size * 0.5  # Each size unit reduces population by 0.5
+    
     reproduction = app.game.fish_population * growth_rate * (1 - app.game.fish_population / carrying_capacity)
-    app.game.fish_population = max(0, int(app.game.fish_population + reproduction - app.game.caught_fish_today))
+    app.game.fish_population = max(0, int(app.game.fish_population + reproduction - population_reduction))
+    
+    # Clear the caught fish sizes for the next day
+    app.game.caught_fish_sizes = []
 
 def update_hunger():
     """Update community hunger based on caught fish"""
@@ -496,17 +507,26 @@ def try_catch_fish(mouse_x, mouse_y):
                 app.game.visible_fish.remove(app.game.dragged_fish)  # Remove from list if present
             app.game.dragged_fish.visible = False
             app.game.dragged_fish.dragged = False  # Reset dragged state
+            
+            # Store fish size before removing the fish
+            fish_size = app.game.dragged_fish.children[1].fish_size
+            app.game.caught_fish_sizes.append(fish_size)
+            
             app.game.dragged_fish = None
             # Update bucket counter
             bucket.children[3].value = f'{app.game.caught_fish_today}/5'
+            
+            # Reduce hunger based on fish size (larger fish reduce more hunger)
+            hunger_reduction = fish_size * 0.2  # Each size unit reduces hunger by 0.2%
+            app.game.hunger_level = max(0, app.game.hunger_level - hunger_reduction)
             
             # If bucket is now full, automatically end the day
             if app.game.caught_fish_today >= 5:
                 end_day()
             return True
     
-    # Try to catch new fish
-    for fish in app.game.visible_fish[:]:
+    # Try to catch new fish (check in reverse order to catch frontmost fish first)
+    for fish in reversed(app.game.visible_fish[:]):  # Use slice copy to avoid modification while iterating
         fish_body = fish.children[1]
         distance = math.sqrt((fish.centerX - hook_x)**2 + (fish.centerY - hook_y)**2)
         if distance < fish_body.fish_size:
@@ -540,7 +560,13 @@ def update_stats_display():
     app.game.stats.children[0].value = f'Day: {app.game.day}'
     app.game.stats.children[1].value = f'Fish Population: {app.game.fish_population}'
     app.game.stats.children[2].value = f'Hunger Level: {int(app.game.hunger_level)}%'
-    app.game.stats.children[3].value = f'Caught Today: {app.game.caught_fish_today}/{app.game.daily_fish_needed}'
+    
+    # Calculate average size of caught fish from stored sizes
+    if app.game.caught_fish_sizes:
+        avg_size = sum(app.game.caught_fish_sizes) / len(app.game.caught_fish_sizes)
+        app.game.stats.children[3].value = f'Caught Today: {app.game.caught_fish_today}/5 (Avg Size: {int(avg_size)})'
+    else:
+        app.game.stats.children[3].value = f'Caught Today: {app.game.caught_fish_today}/5'
     
     if app.game.game_over:
         app.game.game_over_screen.children[2].value = f'Final Score: {int(app.game.score)}'
