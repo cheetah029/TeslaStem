@@ -1,0 +1,37 @@
+Game Mechanics:
+
+There is a maximum of 5 fish that can be caught per day.
+
+There is a maximum of 5 fish that can appear on the screen at once.
+
+Graphics:
+
+The fish must swim from the edge onto the screen in a realistic manner.
+
+All fish must spawn offscreen on either side, but then swim gradually across the screen,
+then disappear off the screen on the opposite side.
+
+When a fish is clicked on, it becomes centered on the mouse and follows the mouse pointer.
+
+There will be a bucket in the top right corner on the dock.
+
+When the mouse is clicked on the bucket, the fish is added to the bucket.
+
+The bucket will fill up to 5 fish, and there will be a counter on the bucket
+to show how many fish are in the bucket, i.e., "1/5".
+
+The bucket will be a grey metallic color.
+
+There will be an animatedcolored bar next to the hunger level on the top left of the screen.
+
+The colored bar will start as a green color when it is full,
+but will then turn yellow and then red when the player is hungry
+and the bar will get shorter.
+
+The fishing line will have a hook at the end.
+
+The fishing rod should be tilted slightly counterclockwise so the tip points more towards the sky and the dock shoud be lowered.
+
+Trash will sometimes float by on the water and can be collected to reduce pollution and increase fish population.
+
+Clouds will float by on the screen from time to time.
