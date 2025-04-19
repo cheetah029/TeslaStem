@@ -26,12 +26,9 @@ def create_game():
     game.mouse_y = 200
     game.selected_crop = None
     
-    # Storage dimensions and position
-    game.storage_height = 40
-    game.storage_top_width = 40
-    game.storage_bottom_width = 25
-    game.storage_x = 350
-    game.storage_y = 120
+    # Production facility dimensions and position
+    game.facility_x = 350
+    game.facility_y = 120
     
     # Waste and pollution visualization
     game.waste = Group()
@@ -45,47 +42,78 @@ def create_game():
     
     # Sky and ground
     sky = Rect(0, 0, 400, 400, fill='skyBlue')
-    ground = Rect(0, 180, 400, 220, fill=rgb(139, 69, 19))
     
-    # Farmland
-    farmland = Rect(0, 130, 400, 50, fill=rgb(101, 67, 33))
-    farmland_detail = Rect(0, 130, 400, 10, fill=rgb(101, 67, 33))
+    # Background landscape (rural area)
+    hills = Group()
+    for i in range(3):
+        hill = Oval(100 + i*150, 300, 200, 100, fill=rgb(34, 139, 34))
+        hills.add(hill)
     
-    # Farm structures
-    for x in [50, 150, 250]:
-        barn = Rect(x, 130, 10, 70, fill=rgb(139, 69, 19))
-        game.background.add(barn)
+    # Farm fields in background
+    fields = Group()
+    for i in range(4):
+        field = Rect(50 + i*80, 250, 60, 40, fill=rgb(139, 69, 19))
+        fields.add(field)
+    
+    # Ground (factory floor)
+    ground = Rect(0, 180, 400, 220, fill=rgb(169, 169, 169))
+    
+    # Factory elements
+    factory = Group()
+    
+    # Factory walls
+    wall_left = Rect(0, 130, 50, 50, fill=rgb(192, 192, 192))
+    wall_right = Rect(350, 130, 50, 50, fill=rgb(192, 192, 192))
+    
+    # Factory windows
+    for x in [20, 370]:
+        window = Rect(x, 140, 20, 30, fill=rgb(135, 206, 235))
+        factory.add(window)
+    
+    # Production facility
+    facility = Group()
+    
+    # Main facility body
+    facility_body = Rect(game.facility_x - 30, game.facility_y - 20, 60, 40, fill=rgb(70, 130, 180))
+    
+    # Conveyor belt
+    conveyor = Rect(game.facility_x - 40, game.facility_y + 20, 80, 10, fill=rgb(169, 169, 169))
+    conveyor_details = Group()
+    for i in range(8):
+        detail = Rect(game.facility_x - 40 + i*10, game.facility_y + 20, 5, 10, fill=rgb(128, 128, 128))
+        conveyor_details.add(detail)
+    
+    # Control panel
+    panel = Rect(game.facility_x - 25, game.facility_y - 15, 50, 30, fill=rgb(47, 79, 79))
+    panel_details = Group()
+    for i in range(3):
+        button = Circle(game.facility_x - 15 + i*15, game.facility_y, 3, fill=rgb(255, 0, 0))
+        panel_details.add(button)
+    
+    # Add all facility parts
+    facility.add(facility_body)
+    facility.add(conveyor)
+    facility.add(conveyor_details)
+    facility.add(panel)
+    facility.add(panel_details)
+    
+    # Add all factory elements
+    factory.add(wall_left)
+    factory.add(wall_right)
+    factory.add(facility)
     
     # Add background elements
     game.background.add(sky)
+    game.background.add(hills)
+    game.background.add(fields)
     game.background.add(ground)
-    game.background.add(farmland)
-    game.background.add(farmland_detail)
+    game.background.add(factory)
     game.background.add(game.waste)
     
-    # Create storage
-    game.storage = Group()
-    
-    # Trapezoid body
-    storage_body = Polygon(
-        game.storage_x - game.storage_top_width/2, game.storage_y,
-        game.storage_x + game.storage_top_width/2, game.storage_y,
-        game.storage_x + game.storage_bottom_width/2, game.storage_y + game.storage_height,
-        game.storage_x - game.storage_bottom_width/2, game.storage_y + game.storage_height,
-        fill='brown'
-    )
-    
-    # Handle and rim
-    handle_radius = 20
-    storage_handle = Arc(game.storage_x, game.storage_y, handle_radius * 2, handle_radius * 2, 
-                       -90, 180, fill=None, border='brown', borderWidth=2)
-    storage_rim = Oval(game.storage_x, game.storage_y, game.storage_top_width, 10, fill=rgb(101, 67, 33))
-    storage_counter = Label('0/5', game.storage_x, game.storage_y + 20, size=14, bold=True)
-    
-    game.storage.add(storage_body)
-    game.storage.add(storage_handle)
-    game.storage.add(storage_rim)
-    game.storage.add(storage_counter)
+    # Create production indicator
+    game.production_indicator = Group()
+    indicator = Circle(game.facility_x, game.facility_y + 40, 10, fill='white', opacity=50)
+    game.production_indicator.add(indicator)
     
     # Create hunger bar
     game.hunger_bar = Group()
@@ -115,46 +143,39 @@ def create_game():
     game.hunger_bar.add(shine)
     game.hunger_bar.add(bar_border)
     
-    # Create farming tool
+    # Create production tool
     game.tool = Group()
     
-    # Tool handle and grip
+    # Tool handle
     handle = Line(0, 100, 80, 100, fill=rgb(139, 69, 19), lineWidth=8)
-    handle_grip = Line(-70, 100, 30, 100, fill=rgb(101, 67, 33), lineWidth=10)
     
-    # Tool body
-    tool_color = rgb(160, 82, 45)
-    tool_sections = []
-    curve_points = [(80, 100), (120, 110), (160, 130), (180, 140)]
-    for i in range(len(curve_points)-1):
-        section = Line(curve_points[i][0], curve_points[i][1],
-                      curve_points[i+1][0], curve_points[i+1][1],
-                      fill=tool_color, lineWidth=4-i*0.8)
-        tool_sections.append(section)
+    # Tool head (harvesting tool)
+    head = Group()
     
-    # Tool head
-    for x, y in [(100, 105), (130, 120), (160, 135)]:
-        head = Circle(x, y, 3, fill=None, border='silver', borderWidth=1)
-        game.tool.add(head)
+    # Main blade
+    blade = Polygon(
+        80, 100,
+        100, 90,
+        100, 110,
+        fill=rgb(192, 192, 192)
+    )
+    
+    # Blade details
+    blade_detail = Line(85, 95, 95, 95, fill=rgb(169, 169, 169), lineWidth=2)
+    
+    head.add(blade)
+    head.add(blade_detail)
     
     # Add all tool parts
     game.tool.add(handle)
-    game.tool.add(handle_grip)
-    for section in tool_sections:
-        game.tool.add(section)
+    game.tool.add(head)
     game.tool.rotateAngle = -35
     game.tool.centerY = 150
-    
-    # Create tool action indicator
-    game.action_indicator = Group()
-    tool_tip = tool_sections[-1]
-    action_circle = Circle(tool_tip.x2, tool_tip.y2, 10, fill='white', opacity=50)
-    game.action_indicator.add(action_circle)
     
     # Instructions
     game.instructions = Group(
         Label('Sustainable Food Production', 200, 16, size=16, bold=True),
-        Label('Use the farming tool to harvest crops', 200, 350, size=14),
+        Label('Use the harvesting tool to collect crops', 200, 350, size=14),
         Label('Press D to end the day', 200, 370, size=14),
         Label('Produce enough food to feed the community, but manage waste!', 200, 390, size=14)
     )
@@ -213,9 +234,9 @@ def spawn_crops():
         if random.random() > spawn_chance:
             continue
         
-        # Spawn crops in different areas of the farmland
+        # Spawn crops in different areas of the factory floor
         x = random.randint(50, 350)
-        y = random.randint(140, 170)
+        y = random.randint(190, 220)
         size_scale = random.randint(1, 10)
         size = 20 + (size_scale - 1) * 2
         
@@ -446,14 +467,14 @@ def update_hunger_bar():
             bar.fill = 'red'
             bar.opacity = 100
 
-def update_farming_tool():
-    """Update farming tool position based on mouse"""
+def update_harvesting_tool():
+    """Update harvesting tool position based on mouse"""
     if not app.game.game_over:
-        indicator = app.game.action_indicator.children[0]
+        indicator = app.game.production_indicator.children[0]
         
-        # Get tool tip position (last section at index 7)
-        tool_tip = app.game.tool.children[7]
-        tool_tip_x, tool_tip_y = tool_tip.x2, tool_tip.y2
+        # Get tool tip position (blade at index 1)
+        tool_tip = app.game.tool.children[1]
+        tool_tip_x, tool_tip_y = tool_tip.centerX, tool_tip.centerY
         
         # Update indicator position
         indicator.centerX = tool_tip_x
@@ -464,18 +485,19 @@ def try_harvest_crop(mouse_x, mouse_y):
     if app.game.game_over:
         return
     
-    indicator = app.game.action_indicator.children[0]
+    indicator = app.game.production_indicator.children[0]
     indicator_x, indicator_y = indicator.centerX, indicator.centerY
     
     if app.game.selected_crop:
-        storage = app.game.storage
+        facility = app.game.background.children[4].children[2]  # Get the facility
         if app.game.produced_food_today >= 5:
             return False
         
-        if (mouse_x > storage.centerX - app.game.storage_top_width/2 and 
-            mouse_x < storage.centerX + app.game.storage_top_width/2 and
-            mouse_y > storage.centerY - app.game.storage_height/2 and 
-            mouse_y < storage.centerY + app.game.storage_height/2):
+        # Check if crop is being delivered to the facility
+        if (mouse_x > facility.centerX - 30 and 
+            mouse_x < facility.centerX + 30 and
+            mouse_y > facility.centerY - 20 and 
+            mouse_y < facility.centerY + 20):
             app.game.produced_food_today += 1
             if app.game.selected_crop in app.game.available_crops:
                 app.game.available_crops.remove(app.game.selected_crop)
@@ -486,7 +508,9 @@ def try_harvest_crop(mouse_x, mouse_y):
             app.game.produced_food_types.append(app.game.selected_crop.crop_type)
             
             app.game.selected_crop = None
-            storage.children[3].value = f'{app.game.produced_food_today}/5'
+            
+            # Update production counter
+            app.game.stats.children[3].value = f'Produced Today: {app.game.produced_food_today}/5'
             
             size_scale = (crop_size - 20) / 2 + 1
             food_increase = min(15, 2 + (size_scale - 1) * 1.5)
@@ -600,7 +624,7 @@ def onStep():
     if not app.game.game_over:
         app.game.time += 1
         spawn_crops()
-        update_farming_tool()
+        update_harvesting_tool()
         update_waste()
         update_hunger_bar()
         
