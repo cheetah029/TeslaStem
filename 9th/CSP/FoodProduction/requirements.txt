@@ -1,0 +1,39 @@
+Game Mechanics:
+
+Food can be produced each day.
+
+Core Premise: A turn-based game where the player balances feeding their community with regulating pollution levels to avoid environmental collapse. The player must produce food to feed their community while also regulating their waste production and pollution levels.
+
+Daily Cycle: Each day, the player produces food by selecting the types of food items they want to produce, sees changes in waste production and pollution levels, and deals with community hunger.
+
+Waste and Pollution Mechanics: A function calculates pollution and waste production based on current amounts of food produced, and may factor in random events.
+
+Community Demand: The community must be fed daily; underproduction raises hunger, overproduction raises pollution.
+
+Random Events: Low crop levels, food waste rises, or cleanup campaigns alter production rates or pollution levels, adding unpredictability.
+
+Upgrades & Gear: Unlock better farming techniques or pollution control methods to reduce waste and pollution, encouraging long-term strategies.
+
+Food Diversity Option: Multiple food items and types of waste with different production, waste, and pollution rates can add depth and teach ecosystem complexity.
+
+Victory Condition: Sustain a stable food production, waste, and pollution levels and avoid widespread hunger for a set number of days.
+
+Failure States: Waste or pollution levels becoming too high, hunger becoming too high, or ecosystem imbalance.
+
+Visual Representation: Food drawn or represented on screen, with real-time feedback on production, hunger, waste, and pollution levels.
+
+User Interaction: Keyboard or mouse input to produce food, invest in upgrades, and respond to events each day.
+
+Educational Value: Demonstrates real-world implications of overproduction of waste and pollution and the importance of sustainable resource management.
+
+Scoring Mechanism: Could track how many villagers are consistently fed alongside average waste and pollution levels.
+
+Scaffolding: Includes functions for production, waste, and pollution updates, event triggers, and hunger tracking—called each turn in code.
+
+Balancing Constraint: If players become too conservative, hunger accumulates; if too aggressive, waste and pollution levels become too high.
+
+Art & Animation: Realistic and detailed complex shapes or images convey daily changes, with event text highlighting sudden shifts in weather or conditions.
+
+Player Agency: Strategic decisions each day affect both immediate survival (food) and long-term sustainability (waste and pollution levels).
+
+Implementation: Written in Python with the cmu_graphics library, using onKeyPress or onMousePress for user input, and onStep for turn progression.
