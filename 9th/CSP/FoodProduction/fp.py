@@ -30,6 +30,14 @@ def create_game():
     game.facility_x = 350
     game.facility_y = 120
     
+    # Conveyor belt parameters
+    game.conveyor_x = 200
+    game.conveyor_y = 200
+    game.conveyor_width = 300
+    game.conveyor_height = 20
+    game.conveyor_items = []
+    game.conveyor_timer = 0
+    
     # Waste and pollution visualization
     game.waste = Group()
     game.waste_timer = 0
@@ -109,6 +117,43 @@ def create_game():
     game.background.add(ground)
     game.background.add(factory)
     game.background.add(game.waste)
+    
+    # Create main conveyor belt
+    game.conveyor_belt = Group()
+    
+    # Conveyor belt base
+    belt_base = Rect(game.conveyor_x - game.conveyor_width/2, 
+                    game.conveyor_y - game.conveyor_height/2, 
+                    game.conveyor_width, 
+                    game.conveyor_height, 
+                    fill=rgb(169, 169, 169))
+    
+    # Conveyor belt details (segments)
+    belt_details = Group()
+    segment_width = 30
+    num_segments = int(game.conveyor_width / segment_width)
+    
+    for i in range(num_segments):
+        x = game.conveyor_x - game.conveyor_width/2 + i * segment_width
+        segment = Rect(x, game.conveyor_y - game.conveyor_height/2, 
+                      segment_width, game.conveyor_height, 
+                      fill=rgb(128, 128, 128))
+        belt_details.add(segment)
+    
+    # Conveyor belt rollers
+    rollers = Group()
+    roller_spacing = 40
+    num_rollers = int(game.conveyor_width / roller_spacing) + 1
+    
+    for i in range(num_rollers):
+        x = game.conveyor_x - game.conveyor_width/2 + i * roller_spacing
+        roller = Circle(x, game.conveyor_y + game.conveyor_height/2 + 5, 5, fill=rgb(192, 192, 192))
+        rollers.add(roller)
+    
+    # Add all conveyor belt parts
+    game.conveyor_belt.add(belt_base)
+    game.conveyor_belt.add(belt_details)
+    game.conveyor_belt.add(rollers)
     
     # Create production indicator
     game.production_indicator = Group()
@@ -221,6 +266,109 @@ def create_crop_colors():
                      min(255, main_color.green + 20),
                      min(255, main_color.blue + 20))
     return main_color, detail_color
+
+def create_food_item():
+    """Create a food item for the conveyor belt"""
+    food_group = Group()
+    food_type = random.choice(['bread', 'apple', 'carrot', 'tomato', 'potato', 'corn', 'wheat'])
+    food_group.food_type = food_type
+    
+    # Set position at the start of the conveyor belt
+    x = app.game.conveyor_x - app.game.conveyor_width/2 + 20
+    y = app.game.conveyor_y - 10
+    
+    if food_type == 'bread':
+        # Bread loaf
+        bread = Oval(x, y, 20, 10, fill=rgb(210, 180, 140))
+        food_group.add(bread)
+        
+        # Bread details
+        for i in range(3):
+            detail = Line(x - 8 + i*8, y - 3, x - 8 + i*8, y + 3, 
+                         fill=rgb(180, 150, 110), lineWidth=1)
+            food_group.add(detail)
+            
+    elif food_type == 'apple':
+        # Apple body
+        apple = Circle(x, y, 8, fill='red')
+        food_group.add(apple)
+        
+        # Apple stem
+        stem = Line(x, y - 8, x, y - 12, fill=rgb(101, 67, 33), lineWidth=2)
+        food_group.add(stem)
+        
+        # Apple leaf
+        leaf = Oval(x + 2, y - 12, 6, 3, fill='green')
+        food_group.add(leaf)
+        
+    elif food_type == 'carrot':
+        # Carrot body
+        carrot = Polygon(
+            x - 5, y,
+            x + 5, y,
+            x + 3, y + 15,
+            x - 3, y + 15,
+            fill=rgb(255, 140, 0)
+        )
+        food_group.add(carrot)
+        
+        # Carrot top
+        top = Polygon(
+            x - 5, y,
+            x + 5, y,
+            x + 3, y - 8,
+            x - 3, y - 8,
+            fill='green'
+        )
+        food_group.add(top)
+        
+    elif food_type == 'tomato':
+        # Tomato body
+        tomato = Circle(x, y, 8, fill='red')
+        food_group.add(tomato)
+        
+        # Tomato stem
+        stem = Line(x, y - 8, x, y - 12, fill=rgb(101, 67, 33), lineWidth=2)
+        food_group.add(stem)
+        
+    elif food_type == 'potato':
+        # Potato body
+        potato = Oval(x, y, 15, 10, fill=rgb(210, 180, 140))
+        food_group.add(potato)
+        
+        # Potato eyes
+        for i in range(2):
+            eye = Circle(x - 5 + i*10, y - 3, 2, fill='black')
+            food_group.add(eye)
+            
+    elif food_type == 'corn':
+        # Corn cob
+        cob = Oval(x, y, 15, 8, fill=rgb(255, 215, 0))
+        food_group.add(cob)
+        
+        # Corn kernels
+        for i in range(3):
+            kernel = Circle(x - 5 + i*5, y, 2, fill=rgb(255, 200, 0))
+            food_group.add(kernel)
+            
+    else:  # wheat
+        # Wheat bundle
+        bundle = Group()
+        
+        # Wheat stalks
+        for i in range(5):
+            stalk = Line(x - 10 + i*4, y + 5, x - 10 + i*4, y - 5, 
+                        fill=rgb(139, 69, 19), lineWidth=1)
+            bundle.add(stalk)
+            
+        food_group.add(bundle)
+    
+    # Set movement properties
+    food_group.speed = random.uniform(1, 2)
+    food_group.centerX = x
+    food_group.centerY = y
+    
+    return food_group
 
 def spawn_crops():
     """Spawn new visible crops for harvesting"""
@@ -344,6 +492,29 @@ def spawn_crops():
         crop_group.centerY = y
         
         app.game.available_crops.append(crop_group)
+
+def update_conveyor_belt():
+    """Update conveyor belt and food items"""
+    app.game.conveyor_timer += 1
+    
+    # Create new food items
+    if app.game.conveyor_timer >= 60:  # Every ~2 seconds
+        app.game.conveyor_timer = 0
+        if len(app.game.conveyor_items) < 5:  # Max 5 items on conveyor
+            food_item = create_food_item()
+            app.game.conveyor_items.append(food_item)
+    
+    # Move existing food items
+    for food in app.game.conveyor_items[:]:  # Use slice copy to avoid modification while iterating
+        food.centerX += food.speed
+        
+        # Remove food if it reaches the end of the conveyor
+        if food.centerX > app.game.conveyor_x + app.game.conveyor_width/2:
+            food.visible = False
+            app.game.conveyor_items.remove(food)
+            
+            # Increase food production when food reaches the end
+            app.game.food_production = min(100, app.game.food_production + 1)
 
 def calculate_production():
     """Calculate daily food production changes"""
@@ -626,6 +797,7 @@ def onStep():
         spawn_crops()
         update_harvesting_tool()
         update_waste()
+        update_conveyor_belt()
         update_hunger_bar()
         
         # Check for game over conditions immediately
