@@ -155,6 +155,17 @@ def create_game():
     game.conveyor_belt.add(belt_details)
     game.conveyor_belt.add(rollers)
     
+    # Create mouse cursor indicator (replacing the fishing rod)
+    game.cursor_indicator = Group()
+    
+    # Create a circular cursor indicator
+    cursor_outer = Circle(0, 0, 15, fill=None, border='white', borderWidth=2)
+    cursor_inner = Circle(0, 0, 5, fill='white')
+    
+    # Add cursor parts
+    game.cursor_indicator.add(cursor_outer)
+    game.cursor_indicator.add(cursor_inner)
+    
     # Create production indicator
     game.production_indicator = Group()
     indicator = Circle(game.facility_x, game.facility_y + 40, 10, fill='white', opacity=50)
@@ -188,39 +199,10 @@ def create_game():
     game.hunger_bar.add(shine)
     game.hunger_bar.add(bar_border)
     
-    # Create production tool
-    game.tool = Group()
-    
-    # Tool handle
-    handle = Line(0, 100, 80, 100, fill=rgb(139, 69, 19), lineWidth=8)
-    
-    # Tool head (harvesting tool)
-    head = Group()
-    
-    # Main blade
-    blade = Polygon(
-        80, 100,
-        100, 90,
-        100, 110,
-        fill=rgb(192, 192, 192)
-    )
-    
-    # Blade details
-    blade_detail = Line(85, 95, 95, 95, fill=rgb(169, 169, 169), lineWidth=2)
-    
-    head.add(blade)
-    head.add(blade_detail)
-    
-    # Add all tool parts
-    game.tool.add(handle)
-    game.tool.add(head)
-    game.tool.rotateAngle = -35
-    game.tool.centerY = 150
-    
     # Instructions
     game.instructions = Group(
         Label('Sustainable Food Production', 200, 16, size=16, bold=True),
-        Label('Use the harvesting tool to collect crops', 200, 350, size=14),
+        Label('Click on crops to harvest them', 200, 350, size=14),
         Label('Press D to end the day', 200, 370, size=14),
         Label('Produce enough food to feed the community, but manage waste!', 200, 390, size=14)
     )
@@ -578,6 +560,54 @@ def check_game_over():
         return True
     return False
 
+def create_waste():
+    """Create a piece of waste"""
+    # Randomly choose which side to spawn from
+    side = random.choice(['left', 'right'])
+    x = -50 if side == 'left' else 450  # Start off-screen
+    y = random.randint(200, 350)  # Only spawn in ground area
+    
+    waste_group = Group()
+    waste_type = random.choice(['plastic', 'chemical', 'organic'])
+    
+    if waste_type == 'plastic':
+        # Plastic container
+        container = Rect(x-8, y-8, 16, 16, fill='lightBlue', opacity=80)
+        waste_group.add(container)
+        
+        # Plastic lid
+        lid = Circle(x, y-12, 5, fill='lightBlue', opacity=80)
+        waste_group.add(lid)
+        
+    elif waste_type == 'chemical':
+        # Chemical container
+        container = Rect(x-6, y-10, 12, 20, fill='purple', opacity=70)
+        waste_group.add(container)
+        
+        # Chemical label
+        label = Rect(x-4, y-8, 8, 12, fill='white', opacity=50)
+        waste_group.add(label)
+        
+    else:  # organic
+        # Food waste
+        waste = Oval(x-8, y-8, 16, 12, fill='brown')
+        waste_group.add(waste)
+        
+        # Mold spots
+        for i in range(3):
+            spot = Circle(x-6 + i*6, y-6 + i*2, 2, fill='green')
+            waste_group.add(spot)
+    
+    waste_group.waste_type = waste_type
+    
+    # Add some random rotation for variety
+    waste_group.rotateAngle = random.randint(-45, 45)
+    
+    # Add some random vertical offset for wave motion
+    waste_group.vertical_offset = random.uniform(0, 2*math.pi)
+    
+    return waste_group
+
 def update_waste():
     """Update waste positions and create new waste"""
     app.game.waste_timer += 1
@@ -638,26 +668,22 @@ def update_hunger_bar():
             bar.fill = 'red'
             bar.opacity = 100
 
-def update_harvesting_tool():
-    """Update harvesting tool position based on mouse"""
+def update_cursor_indicator():
+    """Update cursor indicator position based on mouse"""
     if not app.game.game_over:
+        # Update cursor indicator position
+        app.game.cursor_indicator.centerX = app.game.mouse_x
+        app.game.cursor_indicator.centerY = app.game.mouse_y
+        
+        # Update production indicator position
         indicator = app.game.production_indicator.children[0]
-        
-        # Get tool tip position (blade at index 1)
-        tool_tip = app.game.tool.children[1]
-        tool_tip_x, tool_tip_y = tool_tip.centerX, tool_tip.centerY
-        
-        # Update indicator position
-        indicator.centerX = tool_tip_x
-        indicator.centerY = tool_tip_y
+        indicator.centerX = app.game.mouse_x
+        indicator.centerY = app.game.mouse_y
 
 def try_harvest_crop(mouse_x, mouse_y):
     """Attempt to harvest a crop at the clicked location"""
     if app.game.game_over:
         return
-    
-    indicator = app.game.production_indicator.children[0]
-    indicator_x, indicator_y = indicator.centerX, indicator.centerY
     
     if app.game.selected_crop:
         facility = app.game.background.children[4].children[2]  # Get the facility
@@ -705,7 +731,7 @@ def try_harvest_crop(mouse_x, mouse_y):
             return True
     
     for crop in reversed(app.game.available_crops[:]):
-        distance = math.sqrt((crop.centerX - indicator_x)**2 + (crop.centerY - indicator_y)**2)
+        distance = math.sqrt((crop.centerX - mouse_x)**2 + (crop.centerY - mouse_y)**2)
         if distance < crop.crop_size and app.game.produced_food_today < 5:
             app.game.selected_crop = crop
             crop.harvested = True
@@ -759,34 +785,6 @@ def update_stats_display():
     app.game.stats.children[4].value = f'Pollution: {pollution_percent}%'
     app.game.stats.children[4].left = app.game.stats.left_position
 
-def create_waste():
-    """Create a piece of waste"""
-    # Randomly choose which side to spawn from
-    side = random.choice(['left', 'right'])
-    x = -50 if side == 'left' else 450  # Start off-screen
-    y = random.randint(200, 350)  # Only spawn in ground area
-    
-    waste_group = Group()
-    waste_type = random.choice(['plastic', 'chemical', 'organic'])
-    
-    if waste_type == 'plastic':
-        shape = Circle(x, y, 8, fill='lightBlue')
-    elif waste_type == 'chemical':
-        shape = Rect(x-8, y-8, 16, 16, fill='purple', opacity=70)
-    else:  # organic
-        shape = Rect(x-6, y-8, 12, 16, fill='brown')
-    
-    waste_group.add(shape)
-    waste_group.waste_type = waste_type
-    
-    # Add some random rotation for variety
-    waste_group.rotateAngle = random.randint(-45, 45)
-    
-    # Add some random vertical offset for wave motion
-    waste_group.vertical_offset = random.uniform(0, 2*math.pi)
-    
-    return waste_group
-
 def onAppStart():
     app.game = create_game()
     app.stepsPerSecond = 30
@@ -795,7 +793,7 @@ def onStep():
     if not app.game.game_over:
         app.game.time += 1
         spawn_crops()
-        update_harvesting_tool()
+        update_cursor_indicator()
         update_waste()
         update_conveyor_belt()
         update_hunger_bar()
@@ -804,11 +802,11 @@ def onStep():
         if app.game.food_level <= 0 or app.game.pollution_level >= 500:
             check_game_over()
         
-        # Update crop positions
+        # Update crop positions - REMOVED FLOATING ANIMATION
         for crop in app.game.available_crops[:]:  # Use slice copy to avoid modification while iterating
             if not crop.harvested:  # Only animate crops that aren't being harvested
-                # Gentle swaying animation
-                crop.centerY += math.sin(crop.centerY * 0.01 + app.game.time * 0.05) * 0.2
+                # No more floating animation
+                pass
         
         # Update selected crop position
         if app.game.selected_crop:
