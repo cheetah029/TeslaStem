@@ -14,6 +14,7 @@ def create_game():
     game.food_production = 0
     game.food_decrease_base = 50
     game.food_level = 100
+    game.food_waste = 0  # New food waste parameter
     game.day = 1
     game.target_days = 20
     game.game_over = False
@@ -33,12 +34,12 @@ def create_game():
     # Conveyor belt parameters
     game.conveyor_x = 200
     game.conveyor_y = 200
-    game.conveyor_width = 350  # Increased width
-    game.conveyor_height = 30  # Increased height
+    game.conveyor_width = 400  # Even wider conveyor belt
+    game.conveyor_height = 30
     game.conveyor_items = []
     game.conveyor_timer = 0
-    game.conveyor_spacing = 70  # Fixed spacing between food items
-    game.conveyor_speed = 1.5   # Fixed speed for all food items
+    game.conveyor_spacing = 70
+    game.conveyor_speed = 1.5
     
     # Waste and pollution visualization
     game.waste = Group()
@@ -46,6 +47,12 @@ def create_game():
     game.pollution_level = 0
     game.available_crops = []
     game.max_available_crops = 3
+    
+    # Designated areas
+    game.crop_area_x = 50  # Left side crop area
+    game.crop_area_y = 250
+    game.waste_area_x = 350  # Right side waste area
+    game.waste_area_y = 250
     
     # Create UI elements
     game.background = Group()
@@ -87,10 +94,10 @@ def create_game():
     facility_body = Rect(game.facility_x - 30, game.facility_y - 20, 60, 40, fill=rgb(70, 130, 180))
     
     # Conveyor belt
-    conveyor = Rect(game.facility_x - 40, game.facility_y + 20, 80, 10, fill=rgb(100, 100, 100))  # Darker color
+    conveyor = Rect(game.facility_x - 40, game.facility_y + 20, 80, 10, fill=rgb(100, 100, 100))
     conveyor_details = Group()
     for i in range(8):
-        detail = Rect(game.facility_x - 40 + i*10, game.facility_y + 20, 5, 10, fill=rgb(80, 80, 80))  # Darker color
+        detail = Rect(game.facility_x - 40 + i*10, game.facility_y + 20, 5, 10, fill=rgb(80, 80, 80))
         conveyor_details.add(detail)
     
     # Control panel
@@ -128,7 +135,7 @@ def create_game():
                     game.conveyor_y - game.conveyor_height/2, 
                     game.conveyor_width, 
                     game.conveyor_height, 
-                    fill=rgb(100, 100, 100))  # Darker color
+                    fill=rgb(100, 100, 100))
     
     # Conveyor belt details (segments)
     belt_details = Group()
@@ -139,7 +146,7 @@ def create_game():
         x = game.conveyor_x - game.conveyor_width/2 + i * segment_width
         segment = Rect(x, game.conveyor_y - game.conveyor_height/2, 
                       segment_width, game.conveyor_height, 
-                      fill=rgb(80, 80, 80))  # Darker color
+                      fill=rgb(80, 80, 80))
         belt_details.add(segment)
     
     # Conveyor belt rollers
@@ -200,6 +207,130 @@ def create_game():
     game.hunger_bar.add(bar_fill)
     game.hunger_bar.add(shine)
     game.hunger_bar.add(bar_border)
+    
+    # Create food waste meter
+    game.waste_meter = Group()
+    waste_bar_width = 100
+    waste_bar_height = 15
+    waste_bar_x = 120
+    waste_bar_y = 80
+    
+    # Background and border
+    waste_bar_bg = Rect(waste_bar_x, waste_bar_y, waste_bar_width, waste_bar_height, fill='darkGray')
+    waste_bar_border = Rect(waste_bar_x, waste_bar_y, waste_bar_width, waste_bar_height, 
+                     fill=None, border='black', borderWidth=2)
+    
+    # Fill bar and shine effect
+    waste_bar_fill = Rect(waste_bar_x + 1, waste_bar_y + 1, waste_bar_width - 2, waste_bar_height - 2, 
+                    fill=rgb(139, 69, 19))  # Brown color for waste
+    waste_shine = Polygon(
+        waste_bar_x + 1, waste_bar_y + 1,
+        waste_bar_x + waste_bar_width - 1, waste_bar_y + 1,
+        waste_bar_x + waste_bar_width - 1, waste_bar_y + 4,
+        waste_bar_x + 1, waste_bar_y + 4,
+        fill=rgb(255, 255, 255), opacity=20
+    )
+    
+    game.waste_meter.add(waste_bar_bg)
+    game.waste_meter.add(waste_bar_fill)
+    game.waste_meter.add(waste_shine)
+    game.waste_meter.add(waste_bar_border)
+    
+    # Create pollution meter
+    game.pollution_meter = Group()
+    pollution_bar_width = 100
+    pollution_bar_height = 15
+    pollution_bar_x = 120
+    pollution_bar_y = 107
+    
+    # Background and border
+    pollution_bar_bg = Rect(pollution_bar_x, pollution_bar_y, pollution_bar_width, pollution_bar_height, fill='darkGray')
+    pollution_bar_border = Rect(pollution_bar_x, pollution_bar_y, pollution_bar_width, pollution_bar_height, 
+                     fill=None, border='black', borderWidth=2)
+    
+    # Fill bar and shine effect
+    pollution_bar_fill = Rect(pollution_bar_x + 1, pollution_bar_y + 1, pollution_bar_width - 2, pollution_bar_height - 2, 
+                    fill=rgb(128, 128, 128))  # Gray color for pollution
+    pollution_shine = Polygon(
+        pollution_bar_x + 1, pollution_bar_y + 1,
+        pollution_bar_x + pollution_bar_width - 1, pollution_bar_y + 1,
+        pollution_bar_x + pollution_bar_width - 1, pollution_bar_y + 4,
+        pollution_bar_x + 1, pollution_bar_y + 4,
+        fill=rgb(255, 255, 255), opacity=20
+    )
+    
+    game.pollution_meter.add(pollution_bar_bg)
+    game.pollution_meter.add(pollution_bar_fill)
+    game.pollution_meter.add(pollution_shine)
+    game.pollution_meter.add(pollution_bar_border)
+    
+    # Create crop area indicator
+    game.crop_area = Group()
+    crop_area_rect = Rect(game.crop_area_x - 30, game.crop_area_y - 30, 60, 60, 
+                         fill=None, border='green', borderWidth=2, opacity=50)
+    game.crop_area.add(crop_area_rect)
+    
+    # Create waste area indicator
+    game.waste_area = Group()
+    waste_area_rect = Rect(game.waste_area_x - 30, game.waste_area_y - 30, 60, 60, 
+                          fill=None, border='red', borderWidth=2, opacity=50)
+    game.waste_area.add(waste_area_rect)
+    
+    # Create left side computer monitor
+    game.left_monitor = Group()
+    
+    # Monitor base
+    monitor_base = Rect(30, 300, 40, 10, fill=rgb(50, 50, 50))
+    
+    # Monitor stand
+    monitor_stand = Rect(40, 310, 20, 10, fill=rgb(50, 50, 50))
+    
+    # Monitor screen
+    monitor_screen = Rect(20, 250, 60, 50, fill=rgb(0, 0, 0))
+    
+    # Monitor frame
+    monitor_frame = Rect(15, 245, 70, 60, fill=rgb(100, 100, 100))
+    
+    # Monitor details
+    monitor_details = Group()
+    for i in range(3):
+        button = Circle(25 + i*15, 270, 2, fill=rgb(255, 0, 0))
+        monitor_details.add(button)
+    
+    # Add all monitor parts
+    game.left_monitor.add(monitor_base)
+    game.left_monitor.add(monitor_stand)
+    game.left_monitor.add(monitor_screen)
+    game.left_monitor.add(monitor_frame)
+    game.left_monitor.add(monitor_details)
+    
+    # Create right side computer monitor (existing)
+    game.right_monitor = Group()
+    
+    # Monitor base
+    right_monitor_base = Rect(330, 300, 40, 10, fill=rgb(50, 50, 50))
+    
+    # Monitor stand
+    right_monitor_stand = Rect(340, 310, 20, 10, fill=rgb(50, 50, 50))
+    
+    # Monitor screen
+    right_monitor_screen = Rect(320, 250, 60, 50, fill=rgb(0, 0, 0))
+    
+    # Monitor frame
+    right_monitor_frame = Rect(315, 245, 70, 60, fill=rgb(100, 100, 100))
+    
+    # Monitor details
+    right_monitor_details = Group()
+    for i in range(3):
+        button = Circle(325 + i*15, 270, 2, fill=rgb(255, 0, 0))
+        right_monitor_details.add(button)
+    
+    # Add all monitor parts
+    game.right_monitor.add(right_monitor_base)
+    game.right_monitor.add(right_monitor_stand)
+    game.right_monitor.add(right_monitor_screen)
+    game.right_monitor.add(right_monitor_frame)
+    game.right_monitor.add(right_monitor_details)
     
     # Instructions
     game.instructions = Group(
@@ -367,9 +498,13 @@ def spawn_crops():
         if random.random() > spawn_chance:
             continue
         
-        # Spawn crops in fixed positions on the factory floor
-        # Use predefined positions instead of random ones
-        positions = [(100, 200), (200, 200), (300, 200)]
+        # Spawn crops in the designated crop area
+        # Use positions within the crop area
+        positions = [
+            (app.game.crop_area_x, app.game.crop_area_y),
+            (app.game.crop_area_x - 15, app.game.crop_area_y + 15),
+            (app.game.crop_area_x + 15, app.game.crop_area_y + 15)
+        ]
         position_index = len(app.game.available_crops) % len(positions)
         x, y = positions[position_index]
         
@@ -572,9 +707,9 @@ def check_game_over():
 
 def create_waste():
     """Create a piece of waste"""
-    # Create waste in fixed positions on the factory floor
-    x = random.randint(50, 350)
-    y = random.randint(200, 350)  # Only spawn in ground area
+    # Create waste in the designated waste area
+    x = app.game.waste_area_x + random.randint(-20, 20)
+    y = app.game.waste_area_y + random.randint(-20, 20)
     
     waste_group = Group()
     waste_type = random.choice(['plastic', 'chemical', 'organic'])
@@ -620,10 +755,9 @@ def update_waste():
         app.game.waste_timer = 0
         if len(app.game.waste.children) < 2:  # Max 2 pieces of waste
             waste = create_waste()
-            waste.centerX = random.randint(50, 350)
-            waste.centerY = random.randint(200, 350)
             app.game.waste.add(waste)
             app.game.pollution_level = min(500, app.game.pollution_level + 100)
+            app.game.food_waste = min(100, app.game.food_waste + 10)  # Increase food waste
     
     # Waste no longer moves - it stays in place
     # This removes the floating behavior from the fishing simulator
@@ -656,6 +790,66 @@ def update_hunger_bar():
             bar.width = 98
             bar.fill = 'red'
             bar.opacity = 100
+
+def update_waste_meter():
+    """Update food waste meter color and size"""
+    if not app.game.game_over:
+        bar = app.game.waste_meter.children[1]  # The fill bar
+        waste = app.game.food_waste
+        
+        # Ensure width is always at least 1 pixel
+        bar.width = max(1, 98 * (waste/100))
+        
+        if waste > 70:
+            bar.fill = rgb(139, 0, 0)  # Dark red for high waste
+            bar.opacity = 100
+        elif waste > 30:
+            bar.opacity = 100
+            if waste > 50:
+                ratio = (waste - 50) / 20
+                bar.fill = rgb(139, 69 * (1-ratio), 19)
+            else:
+                ratio = (waste - 30) / 20
+                bar.fill = rgb(139, 69 + 186 * ratio, 19)
+        else:
+            bar.fill = rgb(139, 69, 19)  # Brown for low waste
+            bar.opacity = 50 + math.sin(app.game.time * 0.2) * 50
+    else:
+        bar = app.game.waste_meter.children[1]
+        # Ensure width is always at least 1 pixel
+        bar.width = max(1, 98 * (app.game.food_waste/100))
+        bar.fill = rgb(139, 0, 0)
+        bar.opacity = 100
+
+def update_pollution_meter():
+    """Update pollution meter color and size"""
+    if not app.game.game_over:
+        bar = app.game.pollution_meter.children[1]  # The fill bar
+        pollution = app.game.pollution_level / 5  # Convert to percentage
+        
+        # Ensure width is always at least 1 pixel
+        bar.width = max(1, 98 * (pollution/100))
+        
+        if pollution > 70:
+            bar.fill = rgb(50, 0, 0)  # Very dark red for high pollution
+            bar.opacity = 100
+        elif pollution > 30:
+            bar.opacity = 100
+            if pollution > 50:
+                ratio = (pollution - 50) / 20
+                bar.fill = rgb(128, 128 * (1-ratio), 128)
+            else:
+                ratio = (pollution - 30) / 20
+                bar.fill = rgb(128, 128, 128 + 127 * ratio)
+        else:
+            bar.fill = rgb(128, 128, 128)  # Gray for low pollution
+            bar.opacity = 50 + math.sin(app.game.time * 0.2) * 50
+    else:
+        bar = app.game.pollution_meter.children[1]
+        # Ensure width is always at least 1 pixel
+        bar.width = max(1, 98 * (app.game.pollution_level/500))
+        bar.fill = rgb(50, 0, 0)
+        bar.opacity = 100
 
 def update_cursor_indicator():
     """Update cursor indicator position based on mouse"""
@@ -696,6 +890,9 @@ def try_harvest_crop(mouse_x, mouse_y):
             food_increase = min(15, 5 + random.randint(0, 5))
             app.game.food_level = min(100, app.game.food_level + food_increase)
             
+            # Also increase food waste slightly
+            app.game.food_waste = min(100, app.game.food_waste + 2)
+            
             # Remove food from conveyor
             food.visible = False
             app.game.conveyor_items.remove(food)
@@ -715,6 +912,9 @@ def try_harvest_crop(mouse_x, mouse_y):
             min_pollution = remaining_waste * 100
             new_pollution = max(min_pollution, app.game.pollution_level - 150)
             app.game.pollution_level = new_pollution
+            
+            # Also reduce food waste when cleaning up
+            app.game.food_waste = max(0, app.game.food_waste - 20)
             
             return True
     
@@ -765,6 +965,10 @@ def update_stats_display():
     pollution_percent = min(100, int(app.game.pollution_level / 5))
     app.game.stats.children[4].value = f'Pollution: {pollution_percent}%'
     app.game.stats.children[4].left = app.game.stats.left_position
+    
+    # Update waste and pollution meters
+    update_waste_meter()
+    update_pollution_meter()
 
 def onAppStart():
     app.game = create_game()
