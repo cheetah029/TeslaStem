@@ -24,7 +24,7 @@ def create_game():
     # Mouse position tracking
     game.mouse_x = 200
     game.mouse_y = 200
-    game.selected_crop = None
+    game.selected_food = None
     
     # Production facility dimensions and position
     game.facility_x = 350
@@ -33,10 +33,12 @@ def create_game():
     # Conveyor belt parameters
     game.conveyor_x = 200
     game.conveyor_y = 200
-    game.conveyor_width = 300
-    game.conveyor_height = 20
+    game.conveyor_width = 350  # Increased width
+    game.conveyor_height = 30  # Increased height
     game.conveyor_items = []
     game.conveyor_timer = 0
+    game.conveyor_spacing = 70  # Fixed spacing between food items
+    game.conveyor_speed = 1.5   # Fixed speed for all food items
     
     # Waste and pollution visualization
     game.waste = Group()
@@ -85,10 +87,10 @@ def create_game():
     facility_body = Rect(game.facility_x - 30, game.facility_y - 20, 60, 40, fill=rgb(70, 130, 180))
     
     # Conveyor belt
-    conveyor = Rect(game.facility_x - 40, game.facility_y + 20, 80, 10, fill=rgb(169, 169, 169))
+    conveyor = Rect(game.facility_x - 40, game.facility_y + 20, 80, 10, fill=rgb(100, 100, 100))  # Darker color
     conveyor_details = Group()
     for i in range(8):
-        detail = Rect(game.facility_x - 40 + i*10, game.facility_y + 20, 5, 10, fill=rgb(128, 128, 128))
+        detail = Rect(game.facility_x - 40 + i*10, game.facility_y + 20, 5, 10, fill=rgb(80, 80, 80))  # Darker color
         conveyor_details.add(detail)
     
     # Control panel
@@ -126,7 +128,7 @@ def create_game():
                     game.conveyor_y - game.conveyor_height/2, 
                     game.conveyor_width, 
                     game.conveyor_height, 
-                    fill=rgb(169, 169, 169))
+                    fill=rgb(100, 100, 100))  # Darker color
     
     # Conveyor belt details (segments)
     belt_details = Group()
@@ -137,7 +139,7 @@ def create_game():
         x = game.conveyor_x - game.conveyor_width/2 + i * segment_width
         segment = Rect(x, game.conveyor_y - game.conveyor_height/2, 
                       segment_width, game.conveyor_height, 
-                      fill=rgb(128, 128, 128))
+                      fill=rgb(80, 80, 80))  # Darker color
         belt_details.add(segment)
     
     # Conveyor belt rollers
@@ -155,7 +157,7 @@ def create_game():
     game.conveyor_belt.add(belt_details)
     game.conveyor_belt.add(rollers)
     
-    # Create mouse cursor indicator (replacing the fishing rod)
+    # Create mouse cursor indicator
     game.cursor_indicator = Group()
     
     # Create a circular cursor indicator
@@ -202,7 +204,7 @@ def create_game():
     # Instructions
     game.instructions = Group(
         Label('Sustainable Food Production', 200, 16, size=16, bold=True),
-        Label('Click on crops to harvest them', 200, 350, size=14),
+        Label('Click on food items on the conveyor belt', 200, 350, size=14),
         Label('Press D to end the day', 200, 370, size=14),
         Label('Produce enough food to feed the community, but manage waste!', 200, 390, size=14)
     )
@@ -345,10 +347,11 @@ def create_food_item():
             
         food_group.add(bundle)
     
-    # Set movement properties
-    food_group.speed = random.uniform(1, 2)
+    # Set fixed movement properties
+    food_group.speed = app.game.conveyor_speed
     food_group.centerX = x
     food_group.centerY = y
+    food_group.selected = False
     
     return food_group
 
@@ -364,9 +367,12 @@ def spawn_crops():
         if random.random() > spawn_chance:
             continue
         
-        # Spawn crops in different areas of the factory floor
-        x = random.randint(50, 350)
-        y = random.randint(190, 220)
+        # Spawn crops in fixed positions on the factory floor
+        # Use predefined positions instead of random ones
+        positions = [(100, 200), (200, 200), (300, 200)]
+        position_index = len(app.game.available_crops) % len(positions)
+        x, y = positions[position_index]
+        
         size_scale = random.randint(1, 10)
         size = 20 + (size_scale - 1) * 2
         
@@ -479,16 +485,20 @@ def update_conveyor_belt():
     """Update conveyor belt and food items"""
     app.game.conveyor_timer += 1
     
-    # Create new food items
+    # Create new food items with fixed spacing
     if app.game.conveyor_timer >= 60:  # Every ~2 seconds
         app.game.conveyor_timer = 0
+        
+        # Check if we need a new food item
         if len(app.game.conveyor_items) < 5:  # Max 5 items on conveyor
-            food_item = create_food_item()
-            app.game.conveyor_items.append(food_item)
+            # Check if the last item has moved far enough to make space
+            if not app.game.conveyor_items or app.game.conveyor_items[-1].centerX > app.game.conveyor_x - app.game.conveyor_width/2 + app.game.conveyor_spacing:
+                food_item = create_food_item()
+                app.game.conveyor_items.append(food_item)
     
-    # Move existing food items
+    # Move existing food items at the same speed
     for food in app.game.conveyor_items[:]:  # Use slice copy to avoid modification while iterating
-        food.centerX += food.speed
+        food.centerX += app.game.conveyor_speed
         
         # Remove food if it reaches the end of the conveyor
         if food.centerX > app.game.conveyor_x + app.game.conveyor_width/2:
@@ -562,9 +572,8 @@ def check_game_over():
 
 def create_waste():
     """Create a piece of waste"""
-    # Randomly choose which side to spawn from
-    side = random.choice(['left', 'right'])
-    x = -50 if side == 'left' else 450  # Start off-screen
+    # Create waste in fixed positions on the factory floor
+    x = random.randint(50, 350)
     y = random.randint(200, 350)  # Only spawn in ground area
     
     waste_group = Group()
@@ -600,12 +609,6 @@ def create_waste():
     
     waste_group.waste_type = waste_type
     
-    # Add some random rotation for variety
-    waste_group.rotateAngle = random.randint(-45, 45)
-    
-    # Add some random vertical offset for wave motion
-    waste_group.vertical_offset = random.uniform(0, 2*math.pi)
-    
     return waste_group
 
 def update_waste():
@@ -617,27 +620,13 @@ def update_waste():
         app.game.waste_timer = 0
         if len(app.game.waste.children) < 2:  # Max 2 pieces of waste
             waste = create_waste()
-            side = random.choice(['left', 'right'])
-            waste.centerX = -50 if side == 'left' else 450
+            waste.centerX = random.randint(50, 350)
             waste.centerY = random.randint(200, 350)
-            waste.spawn_side = side
             app.game.waste.add(waste)
             app.game.pollution_level = min(500, app.game.pollution_level + 100)
     
-    # Move existing waste
-    for waste in app.game.waste.children:
-        if waste.spawn_side == 'left':
-            waste.centerX += 1
-        else:
-            waste.centerX -= 1
-        
-        waste.centerY += math.sin(waste.vertical_offset + app.game.time * 0.1) * 0.5
-        waste.rotateAngle += math.sin(app.game.time * 0.05) * 0.5
-        
-        if waste.centerX < -100 or waste.centerX > 500:
-            waste.visible = False
-            app.game.waste.remove(waste)
-            app.game.pollution_level = min(500, app.game.pollution_level + 50)
+    # Waste no longer moves - it stays in place
+    # This removes the floating behavior from the fishing simulator
 
 def update_hunger_bar():
     """Update food bar color and size"""
@@ -681,43 +670,42 @@ def update_cursor_indicator():
         indicator.centerY = app.game.mouse_y
 
 def try_harvest_crop(mouse_x, mouse_y):
-    """Attempt to harvest a crop at the clicked location"""
+    """Attempt to interact with food items on the conveyor belt"""
     if app.game.game_over:
         return
     
-    if app.game.selected_crop:
-        facility = app.game.background.children[4].children[2]  # Get the facility
-        if app.game.produced_food_today >= 5:
-            return False
-        
-        # Check if crop is being delivered to the facility
-        if (mouse_x > facility.centerX - 30 and 
-            mouse_x < facility.centerX + 30 and
-            mouse_y > facility.centerY - 20 and 
-            mouse_y < facility.centerY + 20):
-            app.game.produced_food_today += 1
-            if app.game.selected_crop in app.game.available_crops:
-                app.game.available_crops.remove(app.game.selected_crop)
-            app.game.selected_crop.visible = False
-            app.game.selected_crop.harvested = False
+    # Check if a food item is being clicked
+    for food in app.game.conveyor_items[:]:
+        # Simple distance check for food items
+        distance = math.sqrt((food.centerX - mouse_x)**2 + (food.centerY - mouse_y)**2)
+        if distance < 15:  # Click radius
+            # Food item clicked
+            if app.game.produced_food_today >= 5:
+                return False
             
-            crop_size = app.game.selected_crop.crop_size
-            app.game.produced_food_types.append(app.game.selected_crop.crop_type)
-            
-            app.game.selected_crop = None
+            # Mark food as selected
+            food.selected = True
+            app.game.selected_food = food
             
             # Update production counter
+            app.game.produced_food_today += 1
+            app.game.produced_food_types.append(food.food_type)
             app.game.stats.children[3].value = f'Produced Today: {app.game.produced_food_today}/5'
             
-            size_scale = (crop_size - 20) / 2 + 1
-            food_increase = min(15, 2 + (size_scale - 1) * 1.5)
+            # Increase food level
+            food_increase = min(15, 5 + random.randint(0, 5))
             app.game.food_level = min(100, app.game.food_level + food_increase)
+            
+            # Remove food from conveyor
+            food.visible = False
+            app.game.conveyor_items.remove(food)
+            app.game.selected_food = None
             
             if app.game.produced_food_today >= 5:
                 end_day()
             return True
-        return False
     
+    # Check if waste is being clicked
     for waste in app.game.waste.children:
         if waste.hits(mouse_x, mouse_y):
             app.game.waste.remove(waste)
@@ -728,13 +716,6 @@ def try_harvest_crop(mouse_x, mouse_y):
             new_pollution = max(min_pollution, app.game.pollution_level - 150)
             app.game.pollution_level = new_pollution
             
-            return True
-    
-    for crop in reversed(app.game.available_crops[:]):
-        distance = math.sqrt((crop.centerX - mouse_x)**2 + (crop.centerY - mouse_y)**2)
-        if distance < crop.crop_size and app.game.produced_food_today < 5:
-            app.game.selected_crop = crop
-            crop.harvested = True
             return True
     
     return False
@@ -802,16 +783,9 @@ def onStep():
         if app.game.food_level <= 0 or app.game.pollution_level >= 500:
             check_game_over()
         
-        # Update crop positions - REMOVED FLOATING ANIMATION
-        for crop in app.game.available_crops[:]:  # Use slice copy to avoid modification while iterating
-            if not crop.harvested:  # Only animate crops that aren't being harvested
-                # No more floating animation
-                pass
+        # Crops no longer move or follow the mouse
+        # They stay in their fixed positions
         
-        # Update selected crop position
-        if app.game.selected_crop:
-            app.game.selected_crop.centerX = app.game.mouse_x
-            app.game.selected_crop.centerY = app.game.mouse_y
     update_stats_display()
 
 def onMousePress(mouseX, mouseY):
