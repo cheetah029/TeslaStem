@@ -194,19 +194,19 @@ def create_game():
     stats_panel_bg = Rect(10, 10, 100, 140, fill=rgb(50, 50, 50), opacity=80)
     game.stats_panel.add(stats_panel_bg)
     
-    # Stats labels
-    game.stats_panel.add(Label('Day: 1', 60, 25, size=12, fill='white'))
-    game.stats_panel.add(Label('Food: 0', 60, 45, size=12, fill='white'))
-    game.stats_panel.add(Label('Produced: 0/5', 60, 65, size=12, fill='white'))
-    game.stats_panel.add(Label('Waste: 0%', 60, 85, size=12, fill='white'))
-    game.stats_panel.add(Label('Pollution: 0%', 60, 105, size=12, fill='white'))
-    game.stats_panel.add(Label('Sorting: 0/0', 60, 125, size=12, fill='white'))
+    # Stats labels - moved to the right of the bars
+    game.stats_panel.add(Label('Day: 1', 100, 25, size=12, fill='white'))
+    game.stats_panel.add(Label('Food: 0', 100, 45, size=12, fill='white'))
+    game.stats_panel.add(Label('Produced: 0/5', 100, 65, size=12, fill='white'))
+    game.stats_panel.add(Label('Waste: 0%', 100, 85, size=12, fill='white'))
+    game.stats_panel.add(Label('Pollution: 0%', 100, 105, size=12, fill='white'))
+    game.stats_panel.add(Label('Sorting: 0/0', 100, 125, size=12, fill='white'))
     
     # Create hunger bar
     game.hunger_bar = Group()
     bar_width = 80
     bar_height = 10
-    bar_x = 30
+    bar_x = 10
     bar_y = 35
     
     # Background and border
@@ -234,7 +234,7 @@ def create_game():
     game.waste_meter = Group()
     waste_bar_width = 80
     waste_bar_height = 10
-    waste_bar_x = 30
+    waste_bar_x = 10
     waste_bar_y = 75
     
     # Background and border
@@ -262,7 +262,7 @@ def create_game():
     game.pollution_meter = Group()
     pollution_bar_width = 80
     pollution_bar_height = 10
-    pollution_bar_x = 30
+    pollution_bar_x = 10
     pollution_bar_y = 95
     
     # Background and border
@@ -290,7 +290,7 @@ def create_game():
     game.sorting_meter = Group()
     sorting_bar_width = 80
     sorting_bar_height = 10
-    sorting_bar_x = 30
+    sorting_bar_x = 10
     sorting_bar_y = 115
     
     # Background and border
@@ -326,23 +326,33 @@ def create_game():
                           fill=None, border='red', borderWidth=2, opacity=50)
     game.waste_area.add(waste_area_rect)
     
-    # Create left side compost bin
+    # Create left side compost bin - improved design to match factory setting
     game.compost_bin = Group()
     
     # Bin base
-    bin_base = Rect(30, 300, 40, 10, fill=rgb(139, 69, 19))
+    bin_base = Rect(30, 300, 40, 10, fill=rgb(70, 130, 180))
     
     # Bin body
-    bin_body = Rect(20, 250, 60, 50, fill=rgb(139, 69, 19))
+    bin_body = Rect(20, 250, 60, 50, fill=rgb(70, 130, 180))
     
     # Bin lid
-    bin_lid = Rect(15, 245, 70, 10, fill=rgb(101, 67, 33))
+    bin_lid = Rect(15, 245, 70, 10, fill=rgb(47, 79, 79))
     
-    # Bin details
+    # Bin details - control panel style
     bin_details = Group()
+    
+    # Add control panel to bin
+    panel = Rect(25, 260, 50, 30, fill=rgb(47, 79, 79))
+    bin_details.add(panel)
+    
+    # Add buttons to panel
     for i in range(3):
-        detail = Line(25 + i*15, 260, 25 + i*15, 290, fill=rgb(101, 67, 33), lineWidth=2)
-        bin_details.add(detail)
+        button = Circle(30 + i*15, 275, 3, fill=rgb(255, 0, 0))
+        bin_details.add(button)
+    
+    # Add label
+    bin_label = Label('COMPOST', 50, 240, size=10, fill='white', bold=True)
+    bin_details.add(bin_label)
     
     # Add all bin parts
     game.compost_bin.add(bin_base)
@@ -350,23 +360,33 @@ def create_game():
     game.compost_bin.add(bin_lid)
     game.compost_bin.add(bin_details)
     
-    # Create right side trash bin
+    # Create right side trash bin - improved design to match factory setting
     game.trash_bin = Group()
     
     # Bin base
-    trash_bin_base = Rect(330, 300, 40, 10, fill=rgb(50, 50, 50))
+    trash_bin_base = Rect(330, 300, 40, 10, fill=rgb(70, 130, 180))
     
     # Bin body
-    trash_bin_body = Rect(320, 250, 60, 50, fill=rgb(50, 50, 50))
+    trash_bin_body = Rect(320, 250, 60, 50, fill=rgb(70, 130, 180))
     
     # Bin lid
-    trash_bin_lid = Rect(315, 245, 70, 10, fill=rgb(30, 30, 30))
+    trash_bin_lid = Rect(315, 245, 70, 10, fill=rgb(47, 79, 79))
     
-    # Bin details
+    # Bin details - control panel style
     trash_bin_details = Group()
+    
+    # Add control panel to bin
+    panel = Rect(325, 260, 50, 30, fill=rgb(47, 79, 79))
+    trash_bin_details.add(panel)
+    
+    # Add buttons to panel
     for i in range(3):
-        detail = Line(325 + i*15, 260, 325 + i*15, 290, fill=rgb(30, 30, 30), lineWidth=2)
-        trash_bin_details.add(detail)
+        button = Circle(330 + i*15, 275, 3, fill=rgb(255, 0, 0))
+        trash_bin_details.add(button)
+    
+    # Add label
+    trash_bin_label = Label('TRASH', 350, 240, size=10, fill='white', bold=True)
+    trash_bin_details.add(trash_bin_label)
     
     # Add all bin parts
     game.trash_bin.add(trash_bin_base)
@@ -794,24 +814,9 @@ def update_waste():
     """Update waste positions and create new waste"""
     app.game.waste_timer += 1
     
-    # Create new waste
-    if app.game.waste_timer >= 300:  # Every ~10 seconds
-        app.game.waste_timer = 0
-        if len(app.game.waste.children) < 2:  # Max 2 pieces of waste
-            waste = create_waste()
-            app.game.waste.add(waste)
-            app.game.pollution_level = min(500, app.game.pollution_level + 100)
-            app.game.food_waste = min(100, app.game.food_waste + 10)  # Increase food waste
-            
-            # Add waste to sorting queue if not already at max
-            if len(app.game.waste_to_sort) < app.game.max_waste_to_sort:
-                app.game.waste_to_sort.append(waste)
-                # Move waste to sorting area
-                waste.centerX = 200
-                waste.centerY = 280
-    
-    # Waste no longer moves - it stays in place
-    # This removes the floating behavior from the fishing simulator
+    # Create new waste - now only happens when food is produced (in try_harvest_crop)
+    # This function is kept for future use if needed
+    pass
 
 def update_hunger_bar():
     """Update food bar color and size"""
@@ -944,6 +949,20 @@ def try_harvest_crop(mouse_x, mouse_y):
             # Also increase food waste slightly
             app.game.food_waste = min(100, app.game.food_waste + 2)
             
+            # Create waste when food is produced (more logical connection)
+            if random.random() < 0.3:  # 30% chance to create waste when food is produced
+                if len(app.game.waste.children) < 2:  # Max 2 pieces of waste
+                    waste = create_waste()
+                    app.game.waste.add(waste)
+                    app.game.pollution_level = min(500, app.game.pollution_level + 50)
+                    
+                    # Add waste to sorting queue if not already at max
+                    if len(app.game.waste_to_sort) < app.game.max_waste_to_sort:
+                        app.game.waste_to_sort.append(waste)
+                        # Move waste to sorting area
+                        waste.centerX = 200
+                        waste.centerY = 280
+            
             # Remove food from conveyor
             food.visible = False
             app.game.conveyor_items.remove(food)
@@ -980,7 +999,7 @@ def try_harvest_crop(mouse_x, mouse_y):
             app.game.selected_waste = None
             
             # Update sorting stats
-            app.game.stats_panel.children[5].value = f'Sorting: {app.game.sorting_correct}/{app.game.sorting_correct + app.game.sorting_incorrect}'
+            app.game.stats_panel.children[6].value = f'Sorting: {app.game.sorting_correct}/{app.game.sorting_correct + app.game.sorting_incorrect}'
             
             return True
         
@@ -1002,7 +1021,7 @@ def try_harvest_crop(mouse_x, mouse_y):
             app.game.selected_waste = None
             
             # Update sorting stats
-            app.game.stats_panel.children[5].value = f'Sorting: {app.game.sorting_correct}/{app.game.sorting_correct + app.game.sorting_incorrect}'
+            app.game.stats_panel.children[6].value = f'Sorting: {app.game.sorting_correct}/{app.game.sorting_correct + app.game.sorting_incorrect}'
             
             return True
     
