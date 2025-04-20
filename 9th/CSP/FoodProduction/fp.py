@@ -36,8 +36,8 @@ def create_game():
     # Conveyor belt parameters
     game.conveyor_x = 200
     game.conveyor_y = 200
-    game.conveyor_width = 400  # Even wider conveyor belt
-    game.conveyor_height = 30
+    game.conveyor_width = 450  # Even wider conveyor belt
+    game.conveyor_height = 40  # Thicker conveyor belt
     game.conveyor_items = []
     game.conveyor_timer = 0
     game.conveyor_spacing = 70
@@ -52,9 +52,9 @@ def create_game():
     
     # Designated areas
     game.crop_area_x = 50  # Left side crop area
-    game.crop_area_y = 250
+    game.crop_area_y = 280  # Moved down to make room for wider conveyor
     game.waste_area_x = 350  # Right side waste area
-    game.waste_area_y = 250
+    game.waste_area_y = 280  # Moved down to make room for wider conveyor
     
     # Waste sorting parameters
     game.waste_to_sort = []  # List of waste items waiting to be sorted
@@ -75,6 +75,16 @@ def create_game():
     game.crop_water_level = 0
     game.crop_fertilizer_level = 0
     game.crop_health = 100
+    
+    # Food collection parameters
+    game.selected_food = None
+    game.food_collection_area_x = 200
+    game.food_collection_area_y = 150
+    game.food_collection_area_width = 100
+    game.food_collection_area_height = 60
+    game.food_collection_area = None
+    game.food_collection_count = 0
+    game.food_collection_target = 5
     
     # Create UI elements
     game.background = Group()
@@ -157,7 +167,7 @@ def create_game():
                     game.conveyor_y - game.conveyor_height/2, 
                     game.conveyor_width, 
                     game.conveyor_height, 
-                    fill=rgb(100, 100, 100))
+                    fill=rgb(80, 80, 80))  # Darker gray for better visibility
     
     # Conveyor belt details (segments)
     belt_details = Group()
@@ -168,7 +178,7 @@ def create_game():
         x = game.conveyor_x - game.conveyor_width/2 + i * segment_width
         segment = Rect(x, game.conveyor_y - game.conveyor_height/2, 
                       segment_width, game.conveyor_height, 
-                      fill=rgb(80, 80, 80))
+                      fill=rgb(60, 60, 60))  # Even darker for segments
         belt_details.add(segment)
     
     # Conveyor belt rollers
@@ -210,12 +220,12 @@ def create_game():
     game.stats_panel.add(stats_panel_bg)
     
     # Stats labels - left-aligned and reorganized
-    game.stats_panel.add(Label('Day: 1', 20, 25, size=12, fill='white'))
-    game.stats_panel.add(Label('Produced: 0/5', 20, 45, size=12, fill='white'))
-    game.stats_panel.add(Label('Food: 0', 20, 65, size=12, fill='white'))
-    game.stats_panel.add(Label('Waste: 0%', 20, 85, size=12, fill='white'))
-    game.stats_panel.add(Label('Pollution: 0%', 20, 105, size=12, fill='white'))
-    game.stats_panel.add(Label('Sorting: 0/0', 20, 125, size=12, fill='white'))
+    game.stats_panel.add(Label('Day: 1', 25, 25, size=12, fill='white'))
+    game.stats_panel.add(Label('Produced: 0/5', 25, 45, size=12, fill='white'))
+    game.stats_panel.add(Label('Food: 0', 25, 65, size=12, fill='white'))
+    game.stats_panel.add(Label('Waste: 0%', 25, 85, size=12, fill='white'))
+    game.stats_panel.add(Label('Pollution: 0%', 25, 105, size=12, fill='white'))
+    game.stats_panel.add(Label('Sorting: 0/0', 25, 125, size=12, fill='white'))
     
     # Create hunger bar - moved to the right of the text
     game.hunger_bar = Group()
@@ -434,12 +444,48 @@ def create_game():
     game.crop_panel.add(crop_panel_title)
     game.crop_panel.visible = False
     
+    # Create food collection area
+    game.food_collection_area = Group()
+    
+    # Collection area background
+    collection_area_bg = Rect(game.food_collection_area_x - game.food_collection_area_width/2,
+                            game.food_collection_area_y - game.food_collection_area_height/2,
+                            game.food_collection_area_width,
+                            game.food_collection_area_height,
+                            fill=rgb(70, 130, 180), opacity=80)
+    
+    # Collection area border
+    collection_area_border = Rect(game.food_collection_area_x - game.food_collection_area_width/2,
+                                game.food_collection_area_y - game.food_collection_area_height/2,
+                                game.food_collection_area_width,
+                                game.food_collection_area_height,
+                                fill=None, border='white', borderWidth=2)
+    
+    # Collection area label
+    collection_area_label = Label('FOOD PROCESSING', 
+                                game.food_collection_area_x, 
+                                game.food_collection_area_y - 10, 
+                                size=12, fill='white', bold=True)
+    
+    # Collection area counter
+    collection_area_counter = Label('0/5', 
+                                  game.food_collection_area_x, 
+                                  game.food_collection_area_y + 10, 
+                                  size=14, fill='white', bold=True)
+    
+    # Add all collection area parts
+    game.food_collection_area.add(collection_area_bg)
+    game.food_collection_area.add(collection_area_border)
+    game.food_collection_area.add(collection_area_label)
+    game.food_collection_area.add(collection_area_counter)
+    
     # Instructions
     game.instructions = Group(
         Label('Sustainable Food Production', 200, 16, size=16, bold=True),
-        Label('Click on food items on the conveyor belt', 200, 350, size=14),
-        Label('Sort waste by dragging to monitors', 200, 370, size=14),
-        Label('Press D to end the day', 200, 390, size=14)
+        Label('Click food on conveyor to collect it', 200, 350, size=14),
+        Label('Drop food in processing area to produce', 200, 370, size=14),
+        Label('Sort waste by dragging to monitors', 200, 390, size=14),
+        Label('Press D to end the day', 200, 410, size=14)
     )
     
     # Game over screen
@@ -623,6 +669,15 @@ def spawn_crops():
         crop_type = random.choice(['wheat', 'corn', 'potato', 'tomato', 'carrot'])
         crop_group.crop_type = crop_type
         
+        # Add crop health indicator
+        crop_group.health = 100
+        crop_group.health_indicator = Circle(0, -size/2 - 10, 5, fill='green')
+        crop_group.add(crop_group.health_indicator)
+        
+        # Add crop type indicator
+        crop_group.type_indicator = Label(crop_type[0].upper(), 0, -size/2 - 10, size=8, fill='white', bold=True)
+        crop_group.add(crop_group.type_indicator)
+        
         if crop_type == 'wheat':
             # Wheat stalk
             stalk = Line(0, 0, 0, size * 1.5, fill=rgb(139, 69, 19), lineWidth=2)
@@ -720,7 +775,11 @@ def spawn_crops():
         crop_group.centerX = x
         crop_group.centerY = y
         
+        # Add crop to available crops
         app.game.available_crops.append(crop_group)
+        
+        # Add crop to game
+        app.game.background.add(crop_group)
 
 def update_conveyor_belt():
     """Update conveyor belt and food items"""
@@ -971,13 +1030,26 @@ def try_harvest_crop(mouse_x, mouse_y):
         # Simple distance check for food items
         distance = math.sqrt((food.centerX - mouse_x)**2 + (food.centerY - mouse_y)**2)
         if distance < 15:  # Click radius
-            # Food item clicked - collect it
+            # Food item clicked - select it
+            app.game.selected_food = food
             app.game.conveyor_items.remove(food)
-            food.visible = False
+            return True
+    
+    # Check if selected food is being dropped in the collection area
+    if app.game.selected_food:
+        # Check if dropped in food collection area
+        if (mouse_x > app.game.food_collection_area_x - app.game.food_collection_area_width/2 and
+            mouse_x < app.game.food_collection_area_x + app.game.food_collection_area_width/2 and
+            mouse_y > app.game.food_collection_area_y - app.game.food_collection_area_height/2 and
+            mouse_y < app.game.food_collection_area_y + app.game.food_collection_area_height/2):
+            
+            # Process the food
+            app.game.food_collection_count += 1
+            app.game.food_collection_area.children[3].value = f'{app.game.food_collection_count}/{app.game.food_collection_target}'
             
             # Update production counter
             app.game.produced_food_today += 1
-            app.game.produced_food_types.append(food.food_type)
+            app.game.produced_food_types.append(app.game.selected_food.food_type)
             app.game.stats_panel.children[2].value = f'Produced: {app.game.produced_food_today}/5'
             
             # Increase food level
@@ -1001,8 +1073,14 @@ def try_harvest_crop(mouse_x, mouse_y):
                         waste.centerX = 200
                         waste.centerY = 280
             
-            if app.game.produced_food_today >= 5:
+            # Remove the food item
+            app.game.selected_food.visible = False
+            app.game.selected_food = None
+            
+            # Check if we've collected enough food
+            if app.game.food_collection_count >= app.game.food_collection_target:
                 end_day()
+            
             return True
     
     # Check if waste is being clicked for sorting
@@ -1077,6 +1155,8 @@ def end_day():
     # Only increment day if we haven't won yet
     app.game.day += 1
     app.game.produced_food_today = 0
+    app.game.food_collection_count = 0
+    app.game.food_collection_area.children[3].value = f'{app.game.food_collection_count}/{app.game.food_collection_target}'
     
     # Update stats display
     update_stats_display()
@@ -1181,6 +1261,11 @@ def onKeyPress(key):
 def onMouseMove(mouseX, mouseY):
     app.game.mouse_x = mouseX
     app.game.mouse_y = mouseY
+    
+    # Move selected food with mouse
+    if app.game.selected_food:
+        app.game.selected_food.centerX = mouseX
+        app.game.selected_food.centerY = mouseY
     
     # Move selected waste with mouse
     if app.game.selected_waste:
