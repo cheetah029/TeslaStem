@@ -209,20 +209,20 @@ def create_game():
     stats_panel_bg = Rect(10, 10, 150, 140, fill=rgb(50, 50, 50), opacity=80)
     game.stats_panel.add(stats_panel_bg)
     
-    # Stats labels - original position
-    game.stats_panel.add(Label('Day: 1', 60, 25, size=12, fill='white'))
-    game.stats_panel.add(Label('Food: 0', 60, 45, size=12, fill='white'))
-    game.stats_panel.add(Label('Produced: 0/5', 60, 65, size=12, fill='white'))
-    game.stats_panel.add(Label('Waste: 0%', 60, 85, size=12, fill='white'))
-    game.stats_panel.add(Label('Pollution: 0%', 60, 105, size=12, fill='white'))
-    game.stats_panel.add(Label('Sorting: 0/0', 60, 125, size=12, fill='white'))
+    # Stats labels - left-aligned and reorganized
+    game.stats_panel.add(Label('Day: 1', 20, 25, size=12, fill='white'))
+    game.stats_panel.add(Label('Produced: 0/5', 20, 45, size=12, fill='white'))
+    game.stats_panel.add(Label('Food: 0', 20, 65, size=12, fill='white'))
+    game.stats_panel.add(Label('Waste: 0%', 20, 85, size=12, fill='white'))
+    game.stats_panel.add(Label('Pollution: 0%', 20, 105, size=12, fill='white'))
+    game.stats_panel.add(Label('Sorting: 0/0', 20, 125, size=12, fill='white'))
     
     # Create hunger bar - moved to the right of the text
     game.hunger_bar = Group()
     bar_width = 80
     bar_height = 10
     bar_x = 100
-    bar_y = 35
+    bar_y = 65  # Moved to align with food text
     
     # Background and border
     bar_bg = Rect(bar_x, bar_y, bar_width, bar_height, fill='darkGray')
@@ -250,7 +250,7 @@ def create_game():
     waste_bar_width = 80
     waste_bar_height = 10
     waste_bar_x = 100
-    waste_bar_y = 75
+    waste_bar_y = 85  # Moved to align with waste text
     
     # Background and border
     waste_bar_bg = Rect(waste_bar_x, waste_bar_y, waste_bar_width, waste_bar_height, fill='darkGray')
@@ -278,7 +278,7 @@ def create_game():
     pollution_bar_width = 80
     pollution_bar_height = 10
     pollution_bar_x = 100
-    pollution_bar_y = 95
+    pollution_bar_y = 105  # Moved to align with pollution text
     
     # Background and border
     pollution_bar_bg = Rect(pollution_bar_x, pollution_bar_y, pollution_bar_width, pollution_bar_height, fill='darkGray')
@@ -306,7 +306,7 @@ def create_game():
     sorting_bar_width = 80
     sorting_bar_height = 10
     sorting_bar_x = 100
-    sorting_bar_y = 115
+    sorting_bar_y = 125  # Moved to align with sorting text
     
     # Background and border
     sorting_bar_bg = Rect(sorting_bar_x, sorting_bar_y, sorting_bar_width, sorting_bar_height, fill='darkGray')
@@ -363,7 +363,7 @@ def create_game():
         monitor_details.add(button)
     
     # Add label
-    monitor_label = Label('CROP MONITOR', 50, 240, size=10, fill='white', bold=True)
+    monitor_label = Label('COMPOST', 50, 240, size=10, fill='white', bold=True)
     monitor_details.add(monitor_label)
     
     # Add all monitor parts
@@ -395,7 +395,7 @@ def create_game():
         right_monitor_details.add(button)
     
     # Add label
-    right_monitor_label = Label('WASTE MONITOR', 350, 240, size=10, fill='white', bold=True)
+    right_monitor_label = Label('TRASH', 350, 240, size=10, fill='white', bold=True)
     right_monitor_details.add(right_monitor_label)
     
     # Add all monitor parts
@@ -414,8 +414,8 @@ def create_game():
     # Create waste sorting instructions
     game.sorting_instructions = Group(
         Label('Sort waste here', 200, 230, size=12, fill='black'),
-        Label('Organic → Left Monitor', 200, 245, size=10, fill='green'),
-        Label('Plastic/Chemical → Right Monitor', 200, 260, size=10, fill='red')
+        Label('Organic → Compost', 200, 245, size=10, fill='green'),
+        Label('Plastic/Chemical → Trash', 200, 260, size=10, fill='red')
     )
     
     # Create food selection panel
@@ -438,9 +438,8 @@ def create_game():
     game.instructions = Group(
         Label('Sustainable Food Production', 200, 16, size=16, bold=True),
         Label('Click on food items on the conveyor belt', 200, 350, size=14),
-        Label('Click on crops to interact with them', 200, 370, size=14),
-        Label('Sort waste by dragging to monitors', 200, 390, size=14),
-        Label('Press D to end the day', 200, 410, size=14)
+        Label('Sort waste by dragging to monitors', 200, 370, size=14),
+        Label('Press D to end the day', 200, 390, size=14)
     )
     
     # Game over screen
@@ -477,7 +476,7 @@ def create_crop_colors():
 def create_food_item():
     """Create a food item for the conveyor belt"""
     food_group = Group()
-    food_type = random.choice(['bread', 'apple', 'carrot', 'tomato', 'potato', 'corn', 'wheat'])
+    food_type = random.choice(['bread', 'apple', 'carrot', 'tomato', 'potato', 'corn', 'mushroom', 'wheat'])
     food_group.food_type = food_type
     
     # Set position at the start of the conveyor belt
@@ -558,6 +557,16 @@ def create_food_item():
             kernel = Circle(x - 5 + i*5, y, 2, fill=rgb(255, 200, 0))
             food_group.add(kernel)
             
+    elif food_type == 'mushroom':
+        # Mushroom cap and stem body
+        potato = Oval(x, y, 15, 10, fill=rgb(210, 180, 140))
+        food_group.add(potato)
+
+        # Covering for stem
+        for i in range(2):
+            eye = Circle(x - 5 + i*10, y + 3, 2, fill='black')
+            food_group.add(eye)
+
     else:  # wheat
         # Wheat bundle
         bundle = Group()
@@ -953,208 +962,47 @@ def update_cursor_indicator():
         indicator.centerY = app.game.mouse_y
 
 def try_harvest_crop(mouse_x, mouse_y):
-    """Attempt to interact with food items on the conveyor belt or crops"""
+    """Attempt to interact with food items on the conveyor belt"""
     if app.game.game_over:
         return
-    
-    # Check if crop interaction mode is active
-    if app.game.crop_interaction_mode:
-        # Check if a crop action button is clicked
-        for i, button in enumerate(app.game.crop_action_buttons):
-            if button.hits(mouse_x, mouse_y):
-                action = app.game.crop_actions[i]
-                
-                if action == 'water':
-                    # Water the crop
-                    app.game.crop_water_level = min(100, app.game.crop_water_level + 30)
-                    app.game.crop_health = min(100, app.game.crop_health + 10)
-                    
-                    # Visual feedback
-                    app.game.crop_panel.children[2].value = f'Water: {app.game.crop_water_level}%'
-                    app.game.crop_panel.children[3].value = f'Health: {app.game.crop_health}%'
-                    
-                elif action == 'fertilize':
-                    # Fertilize the crop
-                    app.game.crop_fertilizer_level = min(100, app.game.crop_fertilizer_level + 30)
-                    app.game.crop_health = min(100, app.game.crop_health + 15)
-                    
-                    # Visual feedback
-                    app.game.crop_panel.children[4].value = f'Fertilizer: {app.game.crop_fertilizer_level}%'
-                    app.game.crop_panel.children[3].value = f'Health: {app.game.crop_health}%'
-                    
-                elif action == 'harvest':
-                    # Harvest the crop
-                    if app.game.crop_health > 50:
-                        # Successful harvest
-                        app.game.food_production = min(100, app.game.food_production + 10)
-                        app.game.produced_food_today += 1
-                        app.game.produced_food_types.append(app.game.selected_crop.crop_type)
-                        app.game.stats_panel.children[3].value = f'Produced: {app.game.produced_food_today}/5'
-                        
-                        # Increase food level
-                        food_increase = min(15, 5 + random.randint(0, 5))
-                        app.game.food_level = min(100, app.game.food_level + food_increase)
-                        
-                        # Reset crop
-                        app.game.crop_water_level = 0
-                        app.game.crop_fertilizer_level = 0
-                        app.game.crop_health = 100
-                        
-                        # Visual feedback
-                        app.game.crop_panel.children[2].value = f'Water: {app.game.crop_water_level}%'
-                        app.game.crop_panel.children[4].value = f'Fertilizer: {app.game.crop_fertilizer_level}%'
-                        app.game.crop_panel.children[3].value = f'Health: {app.game.crop_health}%'
-                        
-                        # Create waste when crop is harvested
-                        if random.random() < 0.3:  # 30% chance to create waste
-                            if len(app.game.waste.children) < 2:  # Max 2 pieces of waste
-                                waste = create_waste()
-                                app.game.waste.add(waste)
-                                app.game.pollution_level = min(500, app.game.pollution_level + 50)
-                                
-                                # Add waste to sorting queue if not already at max
-                                if len(app.game.waste_to_sort) < app.game.max_waste_to_sort:
-                                    app.game.waste_to_sort.append(waste)
-                                    # Move waste to sorting area
-                                    waste.centerX = 200
-                                    waste.centerY = 280
-                    else:
-                        # Failed harvest - crop not healthy enough
-                        app.game.crop_health = max(0, app.game.crop_health - 10)
-                        app.game.crop_panel.children[3].value = f'Health: {app.game.crop_health}% (Too low to harvest)'
-                
-                # Close crop panel if harvested
-                if action == 'harvest' and app.game.crop_health > 50:
-                    app.game.crop_interaction_mode = False
-                    app.game.crop_panel.visible = False
-                    app.game.selected_crop = None
-                
-                if app.game.produced_food_today >= 5:
-                    end_day()
-                return True
-        
-        # Check if clicking outside the crop panel
-        if not app.game.crop_panel.hits(mouse_x, mouse_y):
-            app.game.crop_interaction_mode = False
-            app.game.crop_panel.visible = False
-            app.game.selected_crop = None
-            return True
-    
-    # Check if food selection mode is active
-    if app.game.food_selection_mode:
-        # Check if a food option button is clicked
-        for i, button in enumerate(app.game.food_option_buttons):
-            if button.hits(mouse_x, mouse_y):
-                app.game.selected_food_type = app.game.food_options[i]
-                app.game.food_selection_mode = False
-                app.game.food_selection_panel.visible = False
-                
-                # Create a food item of the selected type
-                food_item = create_food_item()
-                food_item.food_type = app.game.selected_food_type
-                
-                # Add to conveyor
-                app.game.conveyor_items.append(food_item)
-                
-                # Update production counter
-                app.game.produced_food_today += 1
-                app.game.produced_food_types.append(food_item.food_type)
-                app.game.stats_panel.children[3].value = f'Produced: {app.game.produced_food_today}/5'
-                
-                # Increase food level
-                food_increase = min(15, 5 + random.randint(0, 5))
-                app.game.food_level = min(100, app.game.food_level + food_increase)
-                
-                # Also increase food waste slightly
-                app.game.food_waste = min(100, app.game.food_waste + 2)
-                
-                # Create waste when food is produced (more logical connection)
-                if random.random() < 0.3:  # 30% chance to create waste when food is produced
-                    if len(app.game.waste.children) < 2:  # Max 2 pieces of waste
-                        waste = create_waste()
-                        app.game.waste.add(waste)
-                        app.game.pollution_level = min(500, app.game.pollution_level + 50)
-                        
-                        # Add waste to sorting queue if not already at max
-                        if len(app.game.waste_to_sort) < app.game.max_waste_to_sort:
-                            app.game.waste_to_sort.append(waste)
-                            # Move waste to sorting area
-                            waste.centerX = 200
-                            waste.centerY = 280
-                
-                if app.game.produced_food_today >= 5:
-                    end_day()
-                return True
-        
-        # Check if clicking outside the food selection panel
-        if not app.game.food_selection_panel.hits(mouse_x, mouse_y):
-            app.game.food_selection_mode = False
-            app.game.food_selection_panel.visible = False
-            return True
     
     # Check if a food item is being clicked
     for food in app.game.conveyor_items[:]:
         # Simple distance check for food items
         distance = math.sqrt((food.centerX - mouse_x)**2 + (food.centerY - mouse_y)**2)
         if distance < 15:  # Click radius
-            # Food item clicked - now opens food selection panel
-            app.game.food_selection_mode = True
-            app.game.food_selection_panel.visible = True
+            # Food item clicked - collect it
+            app.game.conveyor_items.remove(food)
+            food.visible = False
             
-            # Create food option buttons if they don't exist
-            if not app.game.food_option_buttons:
-                for i, food_type in enumerate(app.game.food_options):
-                    # Create button background
-                    button_bg = Rect(160, 120 + i*15, 80, 12, fill=rgb(70, 70, 70))
-                    
-                    # Create button text
-                    button_text = Label(food_type.capitalize(), 200, 126 + i*15, size=10, fill='white')
-                    
-                    # Add to panel
-                    app.game.food_selection_panel.add(button_bg)
-                    app.game.food_selection_panel.add(button_text)
-                    
-                    # Add to buttons list
-                    app.game.food_option_buttons.append(button_bg)
+            # Update production counter
+            app.game.produced_food_today += 1
+            app.game.produced_food_types.append(food.food_type)
+            app.game.stats_panel.children[2].value = f'Produced: {app.game.produced_food_today}/5'
             
-            return True
-    
-    # Check if a crop is being clicked
-    for crop in app.game.available_crops:
-        # Simple distance check for crops
-        distance = math.sqrt((crop.centerX - mouse_x)**2 + (crop.centerY - mouse_y)**2)
-        if distance < 20:  # Click radius
-            # Crop clicked - open crop interaction panel
-            app.game.crop_interaction_mode = True
-            app.game.crop_panel.visible = True
-            app.game.selected_crop = crop
+            # Increase food level
+            food_increase = min(15, 5 + random.randint(0, 5))
+            app.game.food_level = min(100, app.game.food_level + food_increase)
             
-            # Reset crop stats
-            app.game.crop_water_level = 0
-            app.game.crop_fertilizer_level = 0
-            app.game.crop_health = 100
+            # Also increase food waste slightly
+            app.game.food_waste = min(100, app.game.food_waste + 2)
             
-            # Create crop action buttons if they don't exist
-            if not app.game.crop_action_buttons:
-                for i, action in enumerate(app.game.crop_actions):
-                    # Create button background
-                    button_bg = Rect(60, 120 + i*15, 80, 12, fill=rgb(70, 70, 70))
+            # Create waste when food is produced (more logical connection)
+            if random.random() < 0.3:  # 30% chance to create waste when food is produced
+                if len(app.game.waste.children) < 2:  # Max 2 pieces of waste
+                    waste = create_waste()
+                    app.game.waste.add(waste)
+                    app.game.pollution_level = min(500, app.game.pollution_level + 50)
                     
-                    # Create button text
-                    button_text = Label(action.capitalize(), 100, 126 + i*15, size=10, fill='white')
-                    
-                    # Add to panel
-                    app.game.crop_panel.add(button_bg)
-                    app.game.crop_panel.add(button_text)
-                    
-                    # Add to buttons list
-                    app.game.crop_action_buttons.append(button_bg)
-                
-                # Add crop stats labels
-                app.game.crop_panel.add(Label(f'Water: {app.game.crop_water_level}%', 100, 170, size=10, fill='white'))
-                app.game.crop_panel.add(Label(f'Health: {app.game.crop_health}%', 100, 185, size=10, fill='white'))
-                app.game.crop_panel.add(Label(f'Fertilizer: {app.game.crop_fertilizer_level}%', 100, 200, size=10, fill='white'))
+                    # Add waste to sorting queue if not already at max
+                    if len(app.game.waste_to_sort) < app.game.max_waste_to_sort:
+                        app.game.waste_to_sort.append(waste)
+                        # Move waste to sorting area
+                        waste.centerX = 200
+                        waste.centerY = 280
             
+            if app.game.produced_food_today >= 5:
+                end_day()
             return True
     
     # Check if waste is being clicked for sorting
@@ -1165,7 +1013,7 @@ def try_harvest_crop(mouse_x, mouse_y):
     
     # Check if selected waste is being dropped in a monitor
     if app.game.selected_waste:
-        # Check if dropped in left monitor (crop monitor)
+        # Check if dropped in left monitor (compost)
         if (mouse_x > 20 and mouse_x < 80 and 
             mouse_y > 250 and mouse_y < 300):
             # Check if waste is organic
@@ -1188,7 +1036,7 @@ def try_harvest_crop(mouse_x, mouse_y):
             
             return True
         
-        # Check if dropped in right monitor (waste monitor)
+        # Check if dropped in right monitor (trash)
         if (mouse_x > 320 and mouse_x < 380 and 
             mouse_y > 250 and mouse_y < 300):
             # Check if waste is plastic or chemical
@@ -1236,8 +1084,8 @@ def end_day():
 def update_stats_display():
     """Update the display of game statistics"""
     app.game.stats_panel.children[1].value = f'Day: {app.game.day}/{app.game.target_days}'
-    app.game.stats_panel.children[2].value = f'Food: {int(app.game.food_level)}%'
-    app.game.stats_panel.children[3].value = f'Produced: {app.game.produced_food_today}/5'
+    app.game.stats_panel.children[2].value = f'Produced: {app.game.produced_food_today}/5'
+    app.game.stats_panel.children[3].value = f'Food: {int(app.game.food_level)}%'
     app.game.stats_panel.children[4].value = f'Waste: {int(app.game.food_waste)}%'
     app.game.stats_panel.children[5].value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
     
