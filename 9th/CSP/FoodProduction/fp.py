@@ -6,6 +6,7 @@
 from cmu_graphics import *
 import random
 import math
+import time
 
 def create_game():
     game = Group()
@@ -220,12 +221,20 @@ def create_game():
     game.stats_panel.add(stats_panel_bg)
     
     # Stats labels - moved left and left-aligned
-    game.stats_panel.add(Label('Day: 1', 20, 25, size=12, fill='white', align='left'))
-    game.stats_panel.add(Label('Produced: 0/5', 20, 45, size=12, fill='white', align='left'))
-    game.stats_panel.add(Label('Food: 0', 20, 65, size=12, fill='white', align='left'))
-    game.stats_panel.add(Label('Waste: 0%', 20, 85, size=12, fill='white', align='left'))
-    game.stats_panel.add(Label('Pollution: 0%', 20, 105, size=12, fill='white', align='left'))
-    game.stats_panel.add(Label('Sorting: 0/0', 20, 125, size=12, fill='white', align='left'))
+    day_label = Label('Day: 1', 20, 25, size=12, fill='white', align='left')
+    produced_label = Label('Produced: 0/5', 20, 45, size=12, fill='white', align='left')
+    food_label = Label('Food: 0', 20, 65, size=12, fill='white', align='left')
+    waste_label = Label('Waste: 0%', 20, 85, size=12, fill='white', align='left')
+    pollution_label = Label('Pollution: 0%', 20, 105, size=12, fill='white', align='left')
+    sorting_label = Label('Sorting: 0/0', 20, 125, size=12, fill='white', align='left')
+    
+    # Add labels to panel
+    game.stats_panel.add(day_label)
+    game.stats_panel.add(produced_label)
+    game.stats_panel.add(food_label)
+    game.stats_panel.add(waste_label)
+    game.stats_panel.add(pollution_label)
+    game.stats_panel.add(sorting_label)
     
     # Create hunger bar - moved closer to the text
     game.hunger_bar = Group()
@@ -417,15 +426,15 @@ def create_game():
     
     # Create waste sorting area
     game.sorting_area = Group()
-    sorting_area_rect = Rect(150, 280, 100, 60, 
+    sorting_area_rect = Rect(150, 250, 100, 80, 
                            fill=None, border='yellow', borderWidth=2, opacity=50)
     game.sorting_area.add(sorting_area_rect)
     
     # Create waste sorting instructions
     game.sorting_instructions = Group(
-        Label('Sort waste here', 200, 260, size=12, fill='black'),
-        Label('Organic → Compost', 200, 275, size=10, fill='green'),
-        Label('Plastic/Chemical → Trash', 200, 290, size=10, fill='red')
+        Label('Sort waste here', 200, 230, size=12, fill='black'),
+        Label('Organic → Compost', 200, 245, size=10, fill='green'),
+        Label('Plastic/Chemical → Trash', 200, 260, size=10, fill='red')
     )
     
     # Create food selection panel
@@ -484,7 +493,7 @@ def create_game():
         Label('Sustainable Food Production', 200, 16, size=16, bold=True),
         Label('Click food on conveyor to collect it', 200, 350, size=14),
         Label('Drop food in processing area to produce', 200, 370, size=14),
-        Label('Sort waste by dragging to monitors', 200, 390, size=14),
+        Label('Click waste, then click a monitor to sort', 200, 390, size=14),
         Label('Press D to end the day', 200, 410, size=14)
     )
     
@@ -871,43 +880,106 @@ def check_game_over():
     return False
 
 def create_waste():
-    """Create a piece of waste"""
+    """Create a piece of waste with recognizable graphics"""
     # Create waste in the designated waste area
     x = app.game.waste_area_x + random.randint(-20, 20)
     y = app.game.waste_area_y + random.randint(-20, 20)
     
     waste_group = Group()
-    waste_type = random.choice(['plastic', 'chemical', 'organic'])
+    waste_type = random.choice(['plastic', 'chemical', 'organic', 'paper', 'metal', 'glass'])
+    waste_group.waste_type = waste_type
     
     if waste_type == 'plastic':
-        # Plastic container
-        container = Rect(x-8, y-8, 16, 16, fill='lightBlue', opacity=80)
-        waste_group.add(container)
+        # Plastic bottle
+        bottle_body = Rect(x-5, y-15, 10, 30, fill='lightBlue', opacity=90)
+        bottle_neck = Rect(x-3, y-25, 6, 10, fill='lightBlue', opacity=90)
+        bottle_cap = Circle(x, y-30, 4, fill='blue')
         
-        # Plastic lid
-        lid = Circle(x, y-12, 5, fill='lightBlue', opacity=80)
-        waste_group.add(lid)
+        # Add label
+        label = Label('PLASTIC', x, y, size=8, fill='black', bold=True)
+        
+        waste_group.add(bottle_body)
+        waste_group.add(bottle_neck)
+        waste_group.add(bottle_cap)
+        waste_group.add(label)
         
     elif waste_type == 'chemical':
         # Chemical container
-        container = Rect(x-6, y-10, 12, 20, fill='purple', opacity=70)
-        waste_group.add(container)
+        container = Rect(x-8, y-12, 16, 24, fill='purple', opacity=80)
+        container_top = Rect(x-6, y-16, 12, 4, fill='purple', opacity=80)
         
-        # Chemical label
-        label = Rect(x-4, y-8, 8, 12, fill='white', opacity=50)
+        # Warning symbol
+        warning = Polygon(
+            x, y-20,
+            x+5, y-10,
+            x-5, y-10,
+            fill='yellow'
+        )
+        
+        # Add label
+        label = Label('CHEMICAL', x, y+5, size=8, fill='white', bold=True)
+        
+        waste_group.add(container)
+        waste_group.add(container_top)
+        waste_group.add(warning)
+        waste_group.add(label)
+        
+    elif waste_type == 'paper':
+        # Paper waste
+        paper = Rect(x-8, y-6, 16, 12, fill='white')
+        paper_fold = Line(x-4, y-6, x-4, y+6, fill='gray', lineWidth=1)
+        
+        # Add label
+        label = Label('PAPER', x, y+10, size=8, fill='black', bold=True)
+        
+        waste_group.add(paper)
+        waste_group.add(paper_fold)
+        waste_group.add(label)
+        
+    elif waste_type == 'metal':
+        # Metal can
+        can_body = Rect(x-6, y-12, 12, 24, fill='silver')
+        can_top = Circle(x, y-12, 6, fill='silver')
+        
+        # Add label
+        label = Label('METAL', x, y+10, size=8, fill='black', bold=True)
+        
+        waste_group.add(can_body)
+        waste_group.add(can_top)
+        waste_group.add(label)
+        
+    elif waste_type == 'glass':
+        # Glass bottle
+        bottle_body = Rect(x-5, y-15, 10, 30, fill='lightGreen', opacity=70)
+        bottle_neck = Rect(x-3, y-25, 6, 10, fill='lightGreen', opacity=70)
+        bottle_cap = Circle(x, y-30, 4, fill='green')
+        
+        # Add label
+        label = Label('GLASS', x, y, size=8, fill='black', bold=True)
+        
+        waste_group.add(bottle_body)
+        waste_group.add(bottle_neck)
+        waste_group.add(bottle_cap)
         waste_group.add(label)
         
     else:  # organic
         # Food waste
-        waste = Oval(x-8, y-8, 16, 12, fill='brown')
-        waste_group.add(waste)
+        food_waste = Oval(x-10, y-8, 20, 16, fill='brown')
         
         # Mold spots
         for i in range(3):
-            spot = Circle(x-6 + i*6, y-6 + i*2, 2, fill='green')
+            spot = Circle(x-5 + i*5, y-5 + i*2, 2, fill='green')
             waste_group.add(spot)
+        
+        # Add label
+        label = Label('ORGANIC', x, y+5, size=8, fill='white', bold=True)
+        
+        waste_group.add(food_waste)
+        waste_group.add(label)
     
-    waste_group.waste_type = waste_type
+    # Set position
+    waste_group.centerX = x
+    waste_group.centerY = y
     
     return waste_group
 
@@ -1051,7 +1123,7 @@ def try_harvest_crop(mouse_x, mouse_y):
             # Update production counter
             app.game.produced_food_today += 1
             app.game.produced_food_types.append(app.game.selected_food.food_type)
-            app.game.stats_panel.children[2].value = f'Produced: {app.game.produced_food_today}/5'
+            app.game.stats_panel.children[1].value = f'Produced: {app.game.produced_food_today}/5'
             
             # Increase food level
             food_increase = min(15, 5 + random.randint(0, 5))
@@ -1073,6 +1145,8 @@ def try_harvest_crop(mouse_x, mouse_y):
                         # Move waste to sorting area
                         waste.centerX = 200
                         waste.centerY = 280
+                        # Ensure waste is drawn on top
+                        waste.toFront()
             
             # Remove the food item
             app.game.selected_food.visible = False
@@ -1086,13 +1160,22 @@ def try_harvest_crop(mouse_x, mouse_y):
     
     # Check if waste is being clicked for sorting
     for waste in app.game.waste_to_sort[:]:
-        if waste.hits(mouse_x, mouse_y):
+        # Use a more generous hit detection for waste items
+        if (abs(waste.centerX - mouse_x) < 20 and 
+            abs(waste.centerY - mouse_y) < 20):
             app.game.selected_waste = waste
+            # Remove waste from sorting queue but keep it visible
+            app.game.waste_to_sort.remove(waste)
+            # Move waste to mouse position immediately
+            app.game.selected_waste.centerX = mouse_x
+            app.game.selected_waste.centerY = mouse_y
+            # Ensure waste is drawn on top
+            app.game.selected_waste.toFront()
             return True
     
-    # Check if selected waste is being dropped in a monitor
+    # Check if a monitor is being clicked for waste sorting
     if app.game.selected_waste:
-        # Check if dropped in left monitor (compost)
+        # Check if left monitor (compost) is clicked
         if (mouse_x > 20 and mouse_x < 80 and 
             mouse_y > 250 and mouse_y < 300):
             # Check if waste is organic
@@ -1100,40 +1183,84 @@ def try_harvest_crop(mouse_x, mouse_y):
                 app.game.sorting_correct += 1
                 app.game.pollution_level = max(0, app.game.pollution_level - 50)
                 app.game.food_waste = max(0, app.game.food_waste - 10)
+                
+                # Show success feedback
+                feedback = Label('✓ Correct!', mouse_x, mouse_y - 20, size=14, fill='green', bold=True)
+                app.game.add(feedback)
+                feedback.toFront()
+                
+                # Remove feedback after 1 second
+                def remove_feedback():
+                    feedback.visible = False
+                app.game.feedback_timer = time.time() + 1
+                app.game.feedback_label = feedback
+            
             else:
                 app.game.sorting_incorrect += 1
                 app.game.pollution_level = min(500, app.game.pollution_level + 50)
+                
+                # Show error feedback
+                feedback = Label('✗ Wrong!', mouse_x, mouse_y - 20, size=14, fill='red', bold=True)
+                app.game.add(feedback)
+                feedback.toFront()
+                
+                # Remove feedback after 1 second
+                def remove_feedback():
+                    feedback.visible = False
+                app.game.feedback_timer = time.time() + 1
+                app.game.feedback_label = feedback
             
-            # Remove waste from sorting queue and game
-            app.game.waste_to_sort.remove(app.game.selected_waste)
+            # Remove waste from game
             app.game.waste.remove(app.game.selected_waste)
             app.game.selected_waste.visible = False
             app.game.selected_waste = None
             
             # Update sorting stats
-            app.game.stats_panel.children[6].value = f'Sorting: {app.game.sorting_correct}/{app.game.sorting_correct + app.game.sorting_incorrect}'
+            app.game.stats_panel.children[5].value = f'Sorting: {app.game.sorting_correct}/{app.game.sorting_correct + app.game.sorting_incorrect}'
             
             return True
         
-        # Check if dropped in right monitor (trash)
-        if (mouse_x > 320 and mouse_x < 380 and 
-            mouse_y > 250 and mouse_y < 300):
-            # Check if waste is plastic or chemical
-            if app.game.selected_waste.waste_type in ['plastic', 'chemical']:
+        # Check if right monitor (trash) is clicked
+        elif (mouse_x > 320 and mouse_x < 380 and 
+              mouse_y > 250 and mouse_y < 300):
+            # Check if waste is plastic, chemical, metal, glass, or paper
+            if app.game.selected_waste.waste_type in ['plastic', 'chemical', 'metal', 'glass', 'paper']:
                 app.game.sorting_correct += 1
                 app.game.pollution_level = max(0, app.game.pollution_level - 30)
+                
+                # Show success feedback
+                feedback = Label('✓ Correct!', mouse_x, mouse_y - 20, size=14, fill='green', bold=True)
+                app.game.add(feedback)
+                feedback.toFront()
+                
+                # Remove feedback after 1 second
+                def remove_feedback():
+                    feedback.visible = False
+                app.game.feedback_timer = time.time() + 1
+                app.game.feedback_label = feedback
+            
             else:
                 app.game.sorting_incorrect += 1
                 app.game.pollution_level = min(500, app.game.pollution_level + 30)
+                
+                # Show error feedback
+                feedback = Label('✗ Wrong!', mouse_x, mouse_y - 20, size=14, fill='red', bold=True)
+                app.game.add(feedback)
+                feedback.toFront()
+                
+                # Remove feedback after 1 second
+                def remove_feedback():
+                    feedback.visible = False
+                app.game.feedback_timer = time.time() + 1
+                app.game.feedback_label = feedback
             
-            # Remove waste from sorting queue and game
-            app.game.waste_to_sort.remove(app.game.selected_waste)
+            # Remove waste from game
             app.game.waste.remove(app.game.selected_waste)
             app.game.selected_waste.visible = False
             app.game.selected_waste = None
             
             # Update sorting stats
-            app.game.stats_panel.children[6].value = f'Sorting: {app.game.sorting_correct}/{app.game.sorting_correct + app.game.sorting_incorrect}'
+            app.game.stats_panel.children[5].value = f'Sorting: {app.game.sorting_correct}/{app.game.sorting_correct + app.game.sorting_incorrect}'
             
             return True
     
@@ -1164,16 +1291,16 @@ def end_day():
 
 def update_stats_display():
     """Update the display of game statistics"""
-    app.game.stats_panel.children[1].value = f'Day: {app.game.day}/{app.game.target_days}'
-    app.game.stats_panel.children[2].value = f'Produced: {app.game.produced_food_today}/5'
-    app.game.stats_panel.children[3].value = f'Food: {int(app.game.food_level)}%'
-    app.game.stats_panel.children[4].value = f'Waste: {int(app.game.food_waste)}%'
-    app.game.stats_panel.children[5].value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
+    app.game.stats_panel.children[0].value = f'Day: {app.game.day}/{app.game.target_days}'
+    app.game.stats_panel.children[1].value = f'Produced: {app.game.produced_food_today}/5'
+    app.game.stats_panel.children[2].value = f'Food: {int(app.game.food_level)}%'
+    app.game.stats_panel.children[3].value = f'Waste: {int(app.game.food_waste)}%'
+    app.game.stats_panel.children[4].value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
     
     if app.game.sorting_correct + app.game.sorting_incorrect > 0:
-        app.game.stats_panel.children[6].value = f'Sorting: {app.game.sorting_correct}/{app.game.sorting_correct + app.game.sorting_incorrect}'
+        app.game.stats_panel.children[5].value = f'Sorting: {app.game.sorting_correct}/{app.game.sorting_correct + app.game.sorting_incorrect}'
     else:
-        app.game.stats_panel.children[6].value = f'Sorting: 0/0'
+        app.game.stats_panel.children[5].value = f'Sorting: 0/0'
     
     # Update meters
     update_hunger_bar()
@@ -1223,9 +1350,29 @@ def onAppStart():
     app.game = create_game()
     app.stepsPerSecond = 30
     
+    # Create a dedicated layer for waste items that will be drawn on top
+    app.game.waste_layer = Group()
+    app.game.add(app.game.waste_layer)
+    
     # Ensure area indicators are drawn on top
     app.game.crop_area.toFront()
     app.game.waste_area.toFront()
+    
+    # Move waste items to the top layer
+    for waste in app.game.waste.children:
+        waste.visible = False
+        app.game.waste_layer.add(waste)
+        waste.visible = True
+    
+    # Ensure waste layer is always on top
+    app.game.waste_layer.toFront()
+    
+    # Initialize feedback timer
+    app.game.feedback_timer = None
+    app.game.feedback_label = None
+    
+    # Ensure cursor indicator is always on top
+    app.game.cursor_indicator.toFront()
 
 def onStep():
     if not app.game.game_over:
@@ -1247,6 +1394,22 @@ def onStep():
                 app.game.crop_health = max(0, app.game.crop_health - 0.1)
                 app.game.crop_panel.children[3].value = f'Health: {app.game.crop_health}%'
         
+        # Check if feedback timer has expired
+        if (hasattr(app.game, 'feedback_timer') and 
+            hasattr(app.game, 'feedback_label') and 
+            app.game.feedback_timer is not None and 
+            app.game.feedback_label is not None):
+            if time.time() > app.game.feedback_timer:
+                app.game.feedback_label.visible = False
+                app.game.feedback_timer = None
+                app.game.feedback_label = None
+        
+        # Ensure cursor indicator is always on top
+        app.game.cursor_indicator.toFront()
+        
+        # Ensure waste layer is always on top
+        app.game.waste_layer.toFront()
+    
     update_stats_display()
 
 def onMousePress(mouseX, mouseY):
@@ -1278,6 +1441,19 @@ def onMouseMove(mouseX, mouseY):
     if app.game.selected_waste:
         app.game.selected_waste.centerX = mouseX
         app.game.selected_waste.centerY = mouseY
+        # Ensure waste stays on top while being dragged
+        app.game.selected_waste.toFront()
+    
+    # Ensure cursor indicator is always on top
+    app.game.cursor_indicator.toFront()
+    
+    # Ensure waste layer is always on top
+    app.game.waste_layer.toFront()
+
+def onMouseRelease(mouseX, mouseY):
+    # No need for special handling here anymore
+    # All waste sorting is handled in try_harvest_crop
+    pass
 
 onAppStart()
 cmu_graphics.run()
