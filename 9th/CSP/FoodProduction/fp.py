@@ -46,9 +46,6 @@ def create_game():
     
     # Waste and pollution visualization
     game.waste = Group()
-    game.add(game.waste)  # Add waste group to the game
-    game.waste_layer = Group()  # Create waste layer in the game creation
-    game.add(game.waste_layer)  # Add waste layer to the game immediately
     game.waste_timer = 0
     game.pollution_level = 0
     game.available_crops = []
@@ -161,8 +158,7 @@ def create_game():
     game.background.add(fields)
     game.background.add(ground)
     game.background.add(factory)
-    # Don't add waste to background - it will be added to waste_layer instead
-    # game.background.add(game.waste)
+    game.background.add(game.waste)
     
     # Create main conveyor belt
     game.conveyor_belt = Group()
@@ -224,21 +220,22 @@ def create_game():
     stats_panel_bg = Rect(10, 10, 150, 140, fill=rgb(50, 50, 50), opacity=80)
     game.stats_panel.add(stats_panel_bg)
     
-    # Stats labels - moved left and left-aligned
-    day_label = Label('Day: 1', 20, 25, size=12, fill='white', align='left')
-    produced_label = Label('Produced: 0/5', 20, 45, size=12, fill='white', align='left')
-    food_label = Label('Food: 0', 20, 65, size=12, fill='white', align='left')
-    waste_label = Label('Waste: 0%', 20, 85, size=12, fill='white', align='left')
-    pollution_label = Label('Pollution: 0%', 20, 105, size=12, fill='white', align='left')
-    sorting_label = Label('Sorting: 0/0', 20, 125, size=12, fill='white', align='left')
+    # Stats labels - all left-aligned with the same left value
+    # Create individual label variables to ensure consistent left alignment
+    game.day_label = Label('Day: 1/20', 20, 25, size=12, fill='white', align='left')
+    game.produced_label = Label('Produced: 0/5', 20, 45, size=12, fill='white', align='left')
+    game.food_label = Label('Food: 0', 20, 65, size=12, fill='white', align='left')
+    game.waste_label = Label('Waste: 0%', 20, 85, size=12, fill='white', align='left')
+    game.pollution_label = Label('Pollution: 0%', 20, 105, size=12, fill='white', align='left')
+    game.sorting_label = Label('Sorting: 0/0', 20, 125, size=12, fill='white', align='left')
     
     # Add labels to panel
-    game.stats_panel.add(day_label)
-    game.stats_panel.add(produced_label)
-    game.stats_panel.add(food_label)
-    game.stats_panel.add(waste_label)
-    game.stats_panel.add(pollution_label)
-    game.stats_panel.add(sorting_label)
+    game.stats_panel.add(game.day_label)
+    game.stats_panel.add(game.produced_label)
+    game.stats_panel.add(game.food_label)
+    game.stats_panel.add(game.waste_label)
+    game.stats_panel.add(game.pollution_label)
+    game.stats_panel.add(game.sorting_label)
     
     # Create hunger bar - moved closer to the text
     game.hunger_bar = Group()
@@ -893,17 +890,14 @@ def create_waste():
     waste_type = random.choice(['plastic', 'chemical', 'organic', 'paper', 'metal', 'glass'])
     waste_group.waste_type = waste_type
     
-    # Debug: Print information about the waste being created
-    print(f"Creating waste item of type: {waste_type} at position ({x}, {y})")
-    
     if waste_type == 'plastic':
-        # Plastic bottle - made larger and brighter
-        bottle_body = Rect(x-8, y-20, 16, 40, fill='lightBlue', opacity=100)
-        bottle_neck = Rect(x-5, y-30, 10, 10, fill='lightBlue', opacity=100)
-        bottle_cap = Circle(x, y-35, 6, fill='blue')
+        # Plastic bottle
+        bottle_body = Rect(x-5, y-15, 10, 30, fill='lightBlue', opacity=90)
+        bottle_neck = Rect(x-3, y-25, 6, 10, fill='lightBlue', opacity=90)
+        bottle_cap = Circle(x, y-30, 4, fill='blue')
         
-        # Add label - made larger and bolder
-        label = Label('PLASTIC', x, y, size=12, fill='black', bold=True)
+        # Add label
+        label = Label('PLASTIC', x, y, size=8, fill='black', bold=True)
         
         waste_group.add(bottle_body)
         waste_group.add(bottle_neck)
@@ -911,20 +905,20 @@ def create_waste():
         waste_group.add(label)
         
     elif waste_type == 'chemical':
-        # Chemical container - made larger and brighter
-        container = Rect(x-10, y-15, 20, 30, fill='purple', opacity=100)
-        container_top = Rect(x-8, y-20, 16, 5, fill='purple', opacity=100)
+        # Chemical container
+        container = Rect(x-8, y-12, 16, 24, fill='purple', opacity=80)
+        container_top = Rect(x-6, y-16, 12, 4, fill='purple', opacity=80)
         
-        # Warning symbol - made larger
+        # Warning symbol
         warning = Polygon(
-            x, y-25,
-            x+8, y-12,
-            x-8, y-12,
+            x, y-20,
+            x+5, y-10,
+            x-5, y-10,
             fill='yellow'
         )
         
-        # Add label - made larger and bolder
-        label = Label('CHEMICAL', x, y+8, size=12, fill='white', bold=True)
+        # Add label
+        label = Label('CHEMICAL', x, y+5, size=8, fill='white', bold=True)
         
         waste_group.add(container)
         waste_group.add(container_top)
@@ -932,37 +926,37 @@ def create_waste():
         waste_group.add(label)
         
     elif waste_type == 'paper':
-        # Paper waste - made larger and brighter
-        paper = Rect(x-10, y-8, 20, 16, fill='white')
-        paper_fold = Line(x-5, y-8, x-5, y+8, fill='gray', lineWidth=2)
+        # Paper waste
+        paper = Rect(x-8, y-6, 16, 12, fill='white')
+        paper_fold = Line(x-4, y-6, x-4, y+6, fill='gray', lineWidth=1)
         
-        # Add label - made larger and bolder
-        label = Label('PAPER', x, y+12, size=12, fill='black', bold=True)
+        # Add label
+        label = Label('PAPER', x, y+10, size=8, fill='black', bold=True)
         
         waste_group.add(paper)
         waste_group.add(paper_fold)
         waste_group.add(label)
         
     elif waste_type == 'metal':
-        # Metal can - made larger and brighter
-        can_body = Rect(x-8, y-15, 16, 30, fill='silver')
-        can_top = Circle(x, y-15, 8, fill='silver')
+        # Metal can
+        can_body = Rect(x-6, y-12, 12, 24, fill='silver')
+        can_top = Circle(x, y-12, 6, fill='silver')
         
-        # Add label - made larger and bolder
-        label = Label('METAL', x, y+12, size=12, fill='black', bold=True)
+        # Add label
+        label = Label('METAL', x, y+10, size=8, fill='black', bold=True)
         
         waste_group.add(can_body)
         waste_group.add(can_top)
         waste_group.add(label)
         
     elif waste_type == 'glass':
-        # Glass bottle - made larger and brighter
-        bottle_body = Rect(x-8, y-20, 16, 40, fill='lightGreen', opacity=100)
-        bottle_neck = Rect(x-5, y-30, 10, 10, fill='lightGreen', opacity=100)
-        bottle_cap = Circle(x, y-35, 6, fill='green')
+        # Glass bottle
+        bottle_body = Rect(x-5, y-15, 10, 30, fill='lightGreen', opacity=70)
+        bottle_neck = Rect(x-3, y-25, 6, 10, fill='lightGreen', opacity=70)
+        bottle_cap = Circle(x, y-30, 4, fill='green')
         
-        # Add label - made larger and bolder
-        label = Label('GLASS', x, y, size=12, fill='black', bold=True)
+        # Add label
+        label = Label('GLASS', x, y, size=8, fill='black', bold=True)
         
         waste_group.add(bottle_body)
         waste_group.add(bottle_neck)
@@ -970,16 +964,16 @@ def create_waste():
         waste_group.add(label)
         
     else:  # organic
-        # Food waste - made larger and brighter
-        food_waste = Oval(x-12, y-10, 24, 20, fill='brown')
+        # Food waste
+        food_waste = Oval(x-10, y-8, 20, 16, fill='brown')
         
-        # Mold spots - made larger
+        # Mold spots
         for i in range(3):
-            spot = Circle(x-6 + i*6, y-6 + i*3, 3, fill='green')
+            spot = Circle(x-5 + i*5, y-5 + i*2, 2, fill='green')
             waste_group.add(spot)
         
-        # Add label - made larger and bolder
-        label = Label('ORGANIC', x, y+8, size=12, fill='white', bold=True)
+        # Add label
+        label = Label('ORGANIC', x, y+5, size=8, fill='white', bold=True)
         
         waste_group.add(food_waste)
         waste_group.add(label)
@@ -987,20 +981,6 @@ def create_waste():
     # Set position
     waste_group.centerX = x
     waste_group.centerY = y
-    
-    # Make sure the waste item is visible
-    waste_group.visible = True
-    
-    # Add to both waste group and waste layer
-    app.game.waste.add(waste_group)
-    app.game.waste_layer.add(waste_group)
-    
-    # Ensure waste layer is on top
-    app.game.waste_layer.toFront()
-    
-    # Debug: Print information about the waste being added
-    print(f"Added waste item to waste group: {len(app.game.waste.children)}")
-    print(f"Added waste item to waste layer: {len(app.game.waste_layer.children)}")
     
     return waste_group
 
@@ -1078,8 +1058,9 @@ def update_pollution_meter():
         bar = app.game.pollution_meter.children[1]  # The fill bar
         pollution = app.game.pollution_level / 5  # Convert to percentage
         
-        # Ensure width is always at least 1 pixel but doesn't exceed the bar width
-        bar.width = max(1, min(78, 78 * (pollution/100)))
+        # Calculate exact width based on pollution percentage
+        bar_width = 78 * (pollution / 100)
+        bar.width = max(1, min(78, bar_width))
         
         if pollution > 70:
             bar.fill = rgb(50, 0, 0)  # Very dark red for high pollution
@@ -1097,8 +1078,9 @@ def update_pollution_meter():
             bar.opacity = 50 + math.sin(app.game.time * 0.2) * 50
     else:
         bar = app.game.pollution_meter.children[1]
-        # Ensure width is always at least 1 pixel but doesn't exceed the bar width
-        bar.width = max(1, min(78, 78 * (app.game.pollution_level/500)))
+        pollution = app.game.pollution_level / 5  # Convert to percentage
+        bar_width = 78 * (pollution / 100)
+        bar.width = max(1, min(78, bar_width))
         bar.fill = rgb(50, 0, 0)
         bar.opacity = 100
 
@@ -1155,16 +1137,19 @@ def try_harvest_crop(mouse_x, mouse_y):
             
             # Create waste when food is produced (more logical connection)
             if random.random() < 0.3:  # 30% chance to create waste when food is produced
-                if len(app.game.waste_layer.children) < 2:  # Max 2 pieces of waste
+                if len(app.game.waste.children) < 2:  # Max 2 pieces of waste
                     waste = create_waste()
+                    app.game.waste.add(waste)
+                    app.game.pollution_level = min(500, app.game.pollution_level + 50)
                     
-                    # Update pollution level
-                    app.game.pollution_level = min(500, app.game.pollution_level + 10)
-                    
-                    # Debug: Print information about created waste
-                    print(f"Created waste item: {waste.waste_type}")
-                    print(f"Waste layer children count: {len(app.game.waste_layer.children)}")
-                    print(f"Waste group children count: {len(app.game.waste.children)}")
+                    # Add waste to sorting queue if not already at max
+                    if len(app.game.waste_to_sort) < app.game.max_waste_to_sort:
+                        app.game.waste_to_sort.append(waste)
+                        # Move waste to sorting area
+                        waste.centerX = 200
+                        waste.centerY = 280
+                        # Ensure waste is drawn on top
+                        waste.toFront()
             
             # Remove the food item
             app.game.selected_food.visible = False
@@ -1230,7 +1215,6 @@ def try_harvest_crop(mouse_x, mouse_y):
             
             # Remove waste from game
             app.game.waste.remove(app.game.selected_waste)
-            app.game.waste_layer.remove(app.game.selected_waste)
             app.game.selected_waste.visible = False
             app.game.selected_waste = None
             
@@ -1275,7 +1259,6 @@ def try_harvest_crop(mouse_x, mouse_y):
             
             # Remove waste from game
             app.game.waste.remove(app.game.selected_waste)
-            app.game.waste_layer.remove(app.game.selected_waste)
             app.game.selected_waste.visible = False
             app.game.selected_waste = None
             
@@ -1311,16 +1294,17 @@ def end_day():
 
 def update_stats_display():
     """Update the display of game statistics"""
-    app.game.stats_panel.children[0].value = f'Day: {app.game.day}/{app.game.target_days}'
-    app.game.stats_panel.children[1].value = f'Produced: {app.game.produced_food_today}/5'
-    app.game.stats_panel.children[2].value = f'Food: {int(app.game.food_level)}%'
-    app.game.stats_panel.children[3].value = f'Waste: {int(app.game.food_waste)}%'
-    app.game.stats_panel.children[4].value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
+    # Update text values while maintaining left alignment
+    app.game.day_label.value = f'Day: {app.game.day}/{app.game.target_days}'
+    app.game.produced_label.value = f'Produced: {app.game.produced_food_today}/5'
+    app.game.food_label.value = f'Food: {int(app.game.food_level)}%'
+    app.game.waste_label.value = f'Waste: {int(app.game.food_waste)}%'
+    app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
     
     if app.game.sorting_correct + app.game.sorting_incorrect > 0:
-        app.game.stats_panel.children[5].value = f'Sorting: {app.game.sorting_correct}/{app.game.sorting_correct + app.game.sorting_incorrect}'
+        app.game.sorting_label.value = f'Sorting: {app.game.sorting_correct}/{app.game.sorting_correct + app.game.sorting_incorrect}'
     else:
-        app.game.stats_panel.children[5].value = f'Sorting: 0/0'
+        app.game.sorting_label.value = f'Sorting: 0/0'
     
     # Update meters
     update_hunger_bar()
@@ -1370,9 +1354,22 @@ def onAppStart():
     app.game = create_game()
     app.stepsPerSecond = 30
     
+    # Create a dedicated layer for waste items that will be drawn on top
+    app.game.waste_layer = Group()
+    app.game.add(app.game.waste_layer)
+    
     # Ensure area indicators are drawn on top
     app.game.crop_area.toFront()
     app.game.waste_area.toFront()
+    
+    # Move waste items to the top layer
+    for waste in app.game.waste.children:
+        waste.visible = False
+        app.game.waste_layer.add(waste)
+        waste.visible = True
+    
+    # Ensure waste layer is always on top
+    app.game.waste_layer.toFront()
     
     # Initialize feedback timer
     app.game.feedback_timer = None
@@ -1380,14 +1377,6 @@ def onAppStart():
     
     # Ensure cursor indicator is always on top
     app.game.cursor_indicator.toFront()
-    
-    # Ensure waste layer is always on top
-    app.game.waste_layer.toFront()
-    
-    # Debug: Print information about the waste layer
-    print(f"Waste layer children count at start: {len(app.game.waste_layer.children)}")
-    print(f"Waste group children count at start: {len(app.game.waste.children)}")
-    print(f"Waste layer visible at start: {app.game.waste_layer.visible}")
 
 def onStep():
     if not app.game.game_over:
@@ -1396,30 +1385,6 @@ def onStep():
         update_cursor_indicator()
         update_waste()
         update_conveyor_belt()
-        update_hunger_bar()
-        
-        # Debug: Print information about the waste layer
-        if app.game.time % 60 == 0:  # Print every 60 steps (about every 2 seconds)
-            print(f"Waste layer children count: {len(app.game.waste_layer.children)}")
-            print(f"Waste group children count: {len(app.game.waste.children)}")
-            print(f"Waste layer visible: {app.game.waste_layer.visible}")
-            print(f"Waste group visible: {app.game.waste.visible}")
-            for waste in app.game.waste_layer.children:
-                print(f"Waste item visible: {waste.visible}, type: {waste.waste_type}, position: ({waste.centerX}, {waste.centerY})")
-            
-            # Check if waste items are in both groups
-            for waste in app.game.waste_layer.children:
-                if waste not in app.game.waste.children:
-                    print(f"Waste item {waste.waste_type} is in waste_layer but not in waste group")
-                    app.game.waste.add(waste)
-        
-        # Ensure waste items are visible and on top
-        for waste in app.game.waste_layer.children:
-            waste.visible = True
-            waste.toFront()
-        
-        # Ensure waste layer is always on top of everything
-        app.game.waste_layer.toFront()
         
         # Check for game over conditions immediately
         if app.game.food_level <= 0 or app.game.pollution_level >= 500:
@@ -1445,9 +1410,10 @@ def onStep():
         # Ensure cursor indicator is always on top
         app.game.cursor_indicator.toFront()
         
-        # Ensure waste layer is always on top (call again after cursor indicator)
+        # Ensure waste layer is always on top
         app.game.waste_layer.toFront()
     
+    # Update stats display only when needed
     update_stats_display()
 
 def onMousePress(mouseX, mouseY):
@@ -1481,15 +1447,12 @@ def onMouseMove(mouseX, mouseY):
         app.game.selected_waste.centerY = mouseY
         # Ensure waste stays on top while being dragged
         app.game.selected_waste.toFront()
-        # Ensure waste layer is always on top
-        app.game.waste_layer.toFront()
-        # Ensure all waste items are visible and on top
-        for waste in app.game.waste_layer.children:
-            waste.visible = True
-            waste.toFront()
     
     # Ensure cursor indicator is always on top
     app.game.cursor_indicator.toFront()
+    
+    # Ensure waste layer is always on top
+    app.game.waste_layer.toFront()
 
 def onMouseRelease(mouseX, mouseY):
     # No need for special handling here anymore
