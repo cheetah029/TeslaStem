@@ -54,7 +54,7 @@ def create_game():
     game.crop_area_x = 50  # Left side crop area
     game.crop_area_y = 280  # Moved down to make room for wider conveyor
     game.waste_area_x = 350  # Right side waste area
-    game.waste_area_y = 280  # Moved down to make room for wider conveyor
+    game.waste_area_y = 320  # Moved down further
     
     # Waste sorting parameters
     game.waste_to_sort = []  # List of waste items waiting to be sorted
@@ -219,27 +219,27 @@ def create_game():
     stats_panel_bg = Rect(10, 10, 150, 140, fill=rgb(50, 50, 50), opacity=80)
     game.stats_panel.add(stats_panel_bg)
     
-    # Stats labels - left-aligned and reorganized
-    game.stats_panel.add(Label('Day: 1', 25, 25, size=12, fill='white'))
-    game.stats_panel.add(Label('Produced: 0/5', 25, 45, size=12, fill='white'))
-    game.stats_panel.add(Label('Food: 0', 25, 65, size=12, fill='white'))
-    game.stats_panel.add(Label('Waste: 0%', 25, 85, size=12, fill='white'))
-    game.stats_panel.add(Label('Pollution: 0%', 25, 105, size=12, fill='white'))
-    game.stats_panel.add(Label('Sorting: 0/0', 25, 125, size=12, fill='white'))
+    # Stats labels - moved left and left-aligned
+    game.stats_panel.add(Label('Day: 1', 20, 25, size=12, fill='white', align='left'))
+    game.stats_panel.add(Label('Produced: 0/5', 20, 45, size=12, fill='white', align='left'))
+    game.stats_panel.add(Label('Food: 0', 20, 65, size=12, fill='white', align='left'))
+    game.stats_panel.add(Label('Waste: 0%', 20, 85, size=12, fill='white', align='left'))
+    game.stats_panel.add(Label('Pollution: 0%', 20, 105, size=12, fill='white', align='left'))
+    game.stats_panel.add(Label('Sorting: 0/0', 20, 125, size=12, fill='white', align='left'))
     
-    # Create hunger bar - moved to the right of the text
+    # Create hunger bar - moved closer to the text
     game.hunger_bar = Group()
     bar_width = 80
     bar_height = 10
-    bar_x = 100
-    bar_y = 65  # Moved to align with food text
+    bar_x = 100  # Moved left to be closer to text
+    bar_y = 65  # Aligned with food text
     
     # Background and border
     bar_bg = Rect(bar_x, bar_y, bar_width, bar_height, fill='darkGray')
     bar_border = Rect(bar_x, bar_y, bar_width, bar_height, 
                      fill=None, border='black', borderWidth=1)
     
-    # Fill bar and shine effect
+    # Fill bar and shine effect - shortened to fit within border
     bar_fill = Rect(bar_x + 1, bar_y + 1, bar_width - 2, bar_height - 2, 
                     fill=rgb(50, 205, 50))
     shine = Polygon(
@@ -255,19 +255,19 @@ def create_game():
     game.hunger_bar.add(shine)
     game.hunger_bar.add(bar_border)
     
-    # Create food waste meter - moved to the right of the text
+    # Create food waste meter - moved closer to the text
     game.waste_meter = Group()
     waste_bar_width = 80
     waste_bar_height = 10
-    waste_bar_x = 100
-    waste_bar_y = 85  # Moved to align with waste text
+    waste_bar_x = 100  # Moved left to be closer to text
+    waste_bar_y = 85  # Aligned with waste text
     
     # Background and border
     waste_bar_bg = Rect(waste_bar_x, waste_bar_y, waste_bar_width, waste_bar_height, fill='darkGray')
     waste_bar_border = Rect(waste_bar_x, waste_bar_y, waste_bar_width, waste_bar_height, 
                      fill=None, border='black', borderWidth=1)
     
-    # Fill bar and shine effect
+    # Fill bar and shine effect - shortened to fit within border
     waste_bar_fill = Rect(waste_bar_x + 1, waste_bar_y + 1, waste_bar_width - 2, waste_bar_height - 2, 
                     fill=rgb(139, 69, 19))  # Brown color for waste
     waste_shine = Polygon(
@@ -283,19 +283,19 @@ def create_game():
     game.waste_meter.add(waste_shine)
     game.waste_meter.add(waste_bar_border)
     
-    # Create pollution meter - moved to the right of the text
+    # Create pollution meter - moved closer to the text
     game.pollution_meter = Group()
     pollution_bar_width = 80
     pollution_bar_height = 10
-    pollution_bar_x = 100
-    pollution_bar_y = 105  # Moved to align with pollution text
+    pollution_bar_x = 100  # Moved left to be closer to text
+    pollution_bar_y = 105  # Aligned with pollution text
     
     # Background and border
     pollution_bar_bg = Rect(pollution_bar_x, pollution_bar_y, pollution_bar_width, pollution_bar_height, fill='darkGray')
     pollution_bar_border = Rect(pollution_bar_x, pollution_bar_y, pollution_bar_width, pollution_bar_height, 
                      fill=None, border='black', borderWidth=1)
     
-    # Fill bar and shine effect
+    # Fill bar and shine effect - shortened to fit within border
     pollution_bar_fill = Rect(pollution_bar_x + 1, pollution_bar_y + 1, pollution_bar_width - 2, pollution_bar_height - 2, 
                     fill=rgb(128, 128, 128))  # Gray color for pollution
     pollution_shine = Polygon(
@@ -311,19 +311,19 @@ def create_game():
     game.pollution_meter.add(pollution_shine)
     game.pollution_meter.add(pollution_bar_border)
     
-    # Create sorting meter - moved to the right of the text
+    # Create sorting meter - moved closer to the text
     game.sorting_meter = Group()
     sorting_bar_width = 80
     sorting_bar_height = 10
-    sorting_bar_x = 100
-    sorting_bar_y = 125  # Moved to align with sorting text
+    sorting_bar_x = 100  # Moved left to be closer to text
+    sorting_bar_y = 125  # Aligned with sorting text
     
     # Background and border
     sorting_bar_bg = Rect(sorting_bar_x, sorting_bar_y, sorting_bar_width, sorting_bar_height, fill='darkGray')
     sorting_bar_border = Rect(sorting_bar_x, sorting_bar_y, sorting_bar_width, sorting_bar_height, 
                      fill=None, border='black', borderWidth=1)
     
-    # Fill bar and shine effect
+    # Fill bar and shine effect - shortened to fit within border
     sorting_bar_fill = Rect(sorting_bar_x + 1, sorting_bar_y + 1, sorting_bar_width - 2, sorting_bar_height - 2, 
                     fill=rgb(0, 128, 0))  # Green color for sorting
     sorting_shine = Polygon(
@@ -341,13 +341,13 @@ def create_game():
     
     # Create crop area indicator
     game.crop_area = Group()
-    crop_area_rect = Rect(game.crop_area_x - 30, game.crop_area_y - 30, 60, 60, 
+    crop_area_rect = Rect(game.crop_area_x - 30, game.crop_area_y - 50, 60, 60, 
                          fill=None, border='green', borderWidth=2, opacity=50)
     game.crop_area.add(crop_area_rect)
     
     # Create waste area indicator
     game.waste_area = Group()
-    waste_area_rect = Rect(game.waste_area_x - 30, game.waste_area_y - 30, 60, 60, 
+    waste_area_rect = Rect(game.waste_area_x - 30, game.crop_area_y - 50, 60, 60, 
                           fill=None, border='red', borderWidth=2, opacity=50)
     game.waste_area.add(waste_area_rect)
     
@@ -417,15 +417,15 @@ def create_game():
     
     # Create waste sorting area
     game.sorting_area = Group()
-    sorting_area_rect = Rect(150, 250, 100, 60, 
+    sorting_area_rect = Rect(150, 280, 100, 60, 
                            fill=None, border='yellow', borderWidth=2, opacity=50)
     game.sorting_area.add(sorting_area_rect)
     
     # Create waste sorting instructions
     game.sorting_instructions = Group(
-        Label('Sort waste here', 200, 230, size=12, fill='black'),
-        Label('Organic → Compost', 200, 245, size=10, fill='green'),
-        Label('Plastic/Chemical → Trash', 200, 260, size=10, fill='red')
+        Label('Sort waste here', 200, 260, size=12, fill='black'),
+        Label('Organic → Compost', 200, 275, size=10, fill='green'),
+        Label('Plastic/Chemical → Trash', 200, 290, size=10, fill='red')
     )
     
     # Create food selection panel
@@ -925,7 +925,8 @@ def update_hunger_bar():
         bar = app.game.hunger_bar.children[1]  # The fill bar
         food = app.game.food_level
         
-        bar.width = max(0, 98 * (food/100))
+        # Ensure width is always at least 1 pixel but doesn't exceed the bar width
+        bar.width = max(1, min(78, 78 * (food/100)))
         
         if food > 70:
             bar.fill = rgb(0, 255, 0)
@@ -944,7 +945,7 @@ def update_hunger_bar():
     else:
         if app.game.food_level <= 0:
             bar = app.game.hunger_bar.children[1]
-            bar.width = 98
+            bar.width = 78
             bar.fill = 'red'
             bar.opacity = 100
 
@@ -954,8 +955,8 @@ def update_waste_meter():
         bar = app.game.waste_meter.children[1]  # The fill bar
         waste = app.game.food_waste
         
-        # Ensure width is always at least 1 pixel
-        bar.width = max(1, 98 * (waste/100))
+        # Ensure width is always at least 1 pixel but doesn't exceed the bar width
+        bar.width = max(1, min(78, 78 * (waste/100)))
         
         if waste > 70:
             bar.fill = rgb(139, 0, 0)  # Dark red for high waste
@@ -973,8 +974,8 @@ def update_waste_meter():
             bar.opacity = 50 + math.sin(app.game.time * 0.2) * 50
     else:
         bar = app.game.waste_meter.children[1]
-        # Ensure width is always at least 1 pixel
-        bar.width = max(1, 98 * (app.game.food_waste/100))
+        # Ensure width is always at least 1 pixel but doesn't exceed the bar width
+        bar.width = max(1, min(78, 78 * (app.game.food_waste/100)))
         bar.fill = rgb(139, 0, 0)
         bar.opacity = 100
 
@@ -984,8 +985,8 @@ def update_pollution_meter():
         bar = app.game.pollution_meter.children[1]  # The fill bar
         pollution = app.game.pollution_level / 5  # Convert to percentage
         
-        # Ensure width is always at least 1 pixel
-        bar.width = max(1, 98 * (pollution/100))
+        # Ensure width is always at least 1 pixel but doesn't exceed the bar width
+        bar.width = max(1, min(78, 78 * (pollution/100)))
         
         if pollution > 70:
             bar.fill = rgb(50, 0, 0)  # Very dark red for high pollution
@@ -1003,8 +1004,8 @@ def update_pollution_meter():
             bar.opacity = 50 + math.sin(app.game.time * 0.2) * 50
     else:
         bar = app.game.pollution_meter.children[1]
-        # Ensure width is always at least 1 pixel
-        bar.width = max(1, 98 * (app.game.pollution_level/500))
+        # Ensure width is always at least 1 pixel but doesn't exceed the bar width
+        bar.width = max(1, min(78, 78 * (app.game.pollution_level/500)))
         bar.fill = rgb(50, 0, 0)
         bar.opacity = 100
 
@@ -1188,7 +1189,8 @@ def update_sorting_meter():
         
         if total_sorts > 0:
             correct_ratio = app.game.sorting_correct / total_sorts
-            bar.width = max(1, 80 * correct_ratio)
+            # Ensure width is always at least 1 pixel but doesn't exceed the bar width
+            bar.width = max(1, min(78, 78 * correct_ratio))
             
             if correct_ratio > 0.7:
                 bar.fill = rgb(0, 200, 0)  # Bright green for good sorting
@@ -1209,7 +1211,8 @@ def update_sorting_meter():
         
         if total_sorts > 0:
             correct_ratio = app.game.sorting_correct / total_sorts
-            bar.width = max(1, 80 * correct_ratio)
+            # Ensure width is always at least 1 pixel but doesn't exceed the bar width
+            bar.width = max(1, min(78, 78 * correct_ratio))
         else:
             bar.width = 1
             
@@ -1219,6 +1222,10 @@ def update_sorting_meter():
 def onAppStart():
     app.game = create_game()
     app.stepsPerSecond = 30
+    
+    # Ensure area indicators are drawn on top
+    app.game.crop_area.toFront()
+    app.game.waste_area.toFront()
 
 def onStep():
     if not app.game.game_over:
