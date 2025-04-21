@@ -1153,16 +1153,7 @@ def try_harvest_crop(mouse_x, mouse_y):
                     # Ensure waste is drawn on top
                     waste.toFront()
                 
-                # Show feedback about waste production
-                feedback = Label('Food production creates waste!', 200, 350, size=14, fill='red', bold=True)
-                app.game.add(feedback)
-                feedback.toFront()
-                
-                # Remove feedback after 2 seconds
-                def remove_feedback():
-                    feedback.visible = False
-                app.game.feedback_timer = time.time() + 2
-                app.game.feedback_label = feedback
+                # No feedback about waste production - removed to avoid annoyance
             
             # Remove the food item
             app.game.selected_food.visible = False
@@ -1202,31 +1193,21 @@ def try_harvest_crop(mouse_x, mouse_y):
                 app.game.food_waste = max(0, app.game.food_waste - 10)
                 app.game.waste_label.value = f'Waste: {int(app.game.food_waste)}%'
                 
-                # Show success feedback
-                feedback = Label('✓ Correct!', mouse_x, mouse_y - 20, size=14, fill='green', bold=True)
-                app.game.add(feedback)
-                feedback.toFront()
-                
-                # Remove feedback after 1 second
-                def remove_feedback():
-                    feedback.visible = False
-                app.game.feedback_timer = time.time() + 1
-                app.game.feedback_label = feedback
+                # No feedback for correct sorting - removed to avoid annoyance
             
             else:
                 app.game.sorting_incorrect += 1
                 app.game.pollution_level = min(500, app.game.pollution_level + 50)
                 app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
                 
-                # Show error feedback
-                feedback = Label('✗ Wrong!', mouse_x, mouse_y - 20, size=14, fill='red', bold=True)
+                # Show error feedback with more detailed message
+                feedback = Label(f'✗ Wrong! {app.game.selected_waste.waste_type.upper()} goes in TRASH', 
+                               mouse_x, mouse_y - 20, size=14, fill='red', bold=True)
                 app.game.add(feedback)
                 feedback.toFront()
                 
-                # Remove feedback after 1 second
-                def remove_feedback():
-                    feedback.visible = False
-                app.game.feedback_timer = time.time() + 1
+                # Remove feedback after 2 seconds
+                app.game.feedback_timer = time.time() + 2
                 app.game.feedback_label = feedback
             
             # Remove waste from game
@@ -1248,31 +1229,21 @@ def try_harvest_crop(mouse_x, mouse_y):
                 app.game.pollution_level = max(0, app.game.pollution_level - 30)
                 app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
                 
-                # Show success feedback
-                feedback = Label('✓ Correct!', mouse_x, mouse_y - 20, size=14, fill='green', bold=True)
-                app.game.add(feedback)
-                feedback.toFront()
-                
-                # Remove feedback after 1 second
-                def remove_feedback():
-                    feedback.visible = False
-                app.game.feedback_timer = time.time() + 1
-                app.game.feedback_label = feedback
+                # No feedback for correct sorting - removed to avoid annoyance
             
             else:
                 app.game.sorting_incorrect += 1
                 app.game.pollution_level = min(500, app.game.pollution_level + 30)
                 app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
                 
-                # Show error feedback
-                feedback = Label('✗ Wrong!', mouse_x, mouse_y - 20, size=14, fill='red', bold=True)
+                # Show error feedback with more detailed message
+                feedback = Label(f'✗ Wrong! {app.game.selected_waste.waste_type.upper()} goes in COMPOST', 
+                               mouse_x, mouse_y - 20, size=14, fill='red', bold=True)
                 app.game.add(feedback)
                 feedback.toFront()
                 
-                # Remove feedback after 1 second
-                def remove_feedback():
-                    feedback.visible = False
-                app.game.feedback_timer = time.time() + 1
+                # Remove feedback after 2 seconds
+                app.game.feedback_timer = time.time() + 2
                 app.game.feedback_label = feedback
             
             # Remove waste from game
