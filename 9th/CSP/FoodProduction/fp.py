@@ -1126,30 +1126,43 @@ def try_harvest_crop(mouse_x, mouse_y):
             # Update production counter
             app.game.produced_food_today += 1
             app.game.produced_food_types.append(app.game.selected_food.food_type)
-            app.game.stats_panel.children[1].value = f'Produced: {app.game.produced_food_today}/5'
+            app.game.produced_label.value = f'Produced: {app.game.produced_food_today}/5'
             
             # Increase food level
             food_increase = min(15, 5 + random.randint(0, 5))
             app.game.food_level = min(100, app.game.food_level + food_increase)
+            app.game.food_label.value = f'Food: {int(app.game.food_level)}%'
             
             # Also increase food waste slightly
             app.game.food_waste = min(100, app.game.food_waste + 2)
+            app.game.waste_label.value = f'Waste: {int(app.game.food_waste)}%'
             
-            # Create waste when food is produced (more logical connection)
-            if random.random() < 0.3:  # 30% chance to create waste when food is produced
-                if len(app.game.waste.children) < 2:  # Max 2 pieces of waste
-                    waste = create_waste()
-                    app.game.waste.add(waste)
-                    app.game.pollution_level = min(500, app.game.pollution_level + 50)
-                    
-                    # Add waste to sorting queue if not already at max
-                    if len(app.game.waste_to_sort) < app.game.max_waste_to_sort:
-                        app.game.waste_to_sort.append(waste)
-                        # Move waste to sorting area
-                        waste.centerX = 200
-                        waste.centerY = 280
-                        # Ensure waste is drawn on top
-                        waste.toFront()
+            # Create waste when food is produced (100% chance now)
+            if len(app.game.waste.children) < 2:  # Max 2 pieces of waste
+                waste = create_waste()
+                app.game.waste.add(waste)
+                app.game.pollution_level = min(500, app.game.pollution_level + 50)
+                app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
+                
+                # Add waste to sorting queue if not already at max
+                if len(app.game.waste_to_sort) < app.game.max_waste_to_sort:
+                    app.game.waste_to_sort.append(waste)
+                    # Move waste to sorting area
+                    waste.centerX = 200
+                    waste.centerY = 280
+                    # Ensure waste is drawn on top
+                    waste.toFront()
+                
+                # Show feedback about waste production
+                feedback = Label('Food production creates waste!', 200, 350, size=14, fill='red', bold=True)
+                app.game.add(feedback)
+                feedback.toFront()
+                
+                # Remove feedback after 2 seconds
+                def remove_feedback():
+                    feedback.visible = False
+                app.game.feedback_timer = time.time() + 2
+                app.game.feedback_label = feedback
             
             # Remove the food item
             app.game.selected_food.visible = False
@@ -1185,7 +1198,9 @@ def try_harvest_crop(mouse_x, mouse_y):
             if app.game.selected_waste.waste_type == 'organic':
                 app.game.sorting_correct += 1
                 app.game.pollution_level = max(0, app.game.pollution_level - 50)
+                app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
                 app.game.food_waste = max(0, app.game.food_waste - 10)
+                app.game.waste_label.value = f'Waste: {int(app.game.food_waste)}%'
                 
                 # Show success feedback
                 feedback = Label('✓ Correct!', mouse_x, mouse_y - 20, size=14, fill='green', bold=True)
@@ -1201,6 +1216,7 @@ def try_harvest_crop(mouse_x, mouse_y):
             else:
                 app.game.sorting_incorrect += 1
                 app.game.pollution_level = min(500, app.game.pollution_level + 50)
+                app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
                 
                 # Show error feedback
                 feedback = Label('✗ Wrong!', mouse_x, mouse_y - 20, size=14, fill='red', bold=True)
@@ -1219,7 +1235,7 @@ def try_harvest_crop(mouse_x, mouse_y):
             app.game.selected_waste = None
             
             # Update sorting stats
-            app.game.stats_panel.children[5].value = f'Sorting: {app.game.sorting_correct}/{app.game.sorting_correct + app.game.sorting_incorrect}'
+            app.game.sorting_label.value = f'Sorting: {app.game.sorting_correct}/{app.game.sorting_correct + app.game.sorting_incorrect}'
             
             return True
         
@@ -1230,6 +1246,7 @@ def try_harvest_crop(mouse_x, mouse_y):
             if app.game.selected_waste.waste_type in ['plastic', 'chemical', 'metal', 'glass', 'paper']:
                 app.game.sorting_correct += 1
                 app.game.pollution_level = max(0, app.game.pollution_level - 30)
+                app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
                 
                 # Show success feedback
                 feedback = Label('✓ Correct!', mouse_x, mouse_y - 20, size=14, fill='green', bold=True)
@@ -1245,6 +1262,7 @@ def try_harvest_crop(mouse_x, mouse_y):
             else:
                 app.game.sorting_incorrect += 1
                 app.game.pollution_level = min(500, app.game.pollution_level + 30)
+                app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
                 
                 # Show error feedback
                 feedback = Label('✗ Wrong!', mouse_x, mouse_y - 20, size=14, fill='red', bold=True)
@@ -1263,7 +1281,7 @@ def try_harvest_crop(mouse_x, mouse_y):
             app.game.selected_waste = None
             
             # Update sorting stats
-            app.game.stats_panel.children[5].value = f'Sorting: {app.game.sorting_correct}/{app.game.sorting_correct + app.game.sorting_incorrect}'
+            app.game.sorting_label.value = f'Sorting: {app.game.sorting_correct}/{app.game.sorting_correct + app.game.sorting_incorrect}'
             
             return True
     
@@ -1290,11 +1308,6 @@ def end_day():
     app.game.food_collection_area.children[3].value = f'{app.game.food_collection_count}/{app.game.food_collection_target}'
     
     # Update stats display
-    update_stats_display()
-
-def update_stats_display():
-    """Update the display of game statistics"""
-    # Update text values while maintaining left alignment
     app.game.day_label.value = f'Day: {app.game.day}/{app.game.target_days}'
     app.game.produced_label.value = f'Produced: {app.game.produced_food_today}/5'
     app.game.food_label.value = f'Food: {int(app.game.food_level)}%'
@@ -1413,8 +1426,11 @@ def onStep():
         # Ensure waste layer is always on top
         app.game.waste_layer.toFront()
     
-    # Update stats display only when needed
-    update_stats_display()
+    # Update meters
+    update_hunger_bar()
+    update_waste_meter()
+    update_pollution_meter()
+    update_sorting_meter()
 
 def onMousePress(mouseX, mouseY):
     try_harvest_crop(mouseX, mouseY)
