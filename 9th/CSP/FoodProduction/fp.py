@@ -321,34 +321,6 @@ def create_game():
     game.pollution_meter.add(pollution_shine)
     game.pollution_meter.add(pollution_bar_border)
     
-    # Create sorting meter - moved closer to the text
-    game.sorting_meter = Group()
-    sorting_bar_width = 80
-    sorting_bar_height = 10
-    sorting_bar_x = 100  # Moved left to be closer to text
-    sorting_bar_y = 125  # Aligned with sorting text
-    
-    # Background and border
-    sorting_bar_bg = Rect(sorting_bar_x, sorting_bar_y, sorting_bar_width, sorting_bar_height, fill='darkGray')
-    sorting_bar_border = Rect(sorting_bar_x, sorting_bar_y, sorting_bar_width, sorting_bar_height, 
-                     fill=None, border='black', borderWidth=1)
-    
-    # Fill bar and shine effect - shortened to fit within border
-    sorting_bar_fill = Rect(sorting_bar_x + 1, sorting_bar_y + 1, sorting_bar_width - 2, sorting_bar_height - 2, 
-                    fill=rgb(0, 128, 0))  # Green color for sorting
-    sorting_shine = Polygon(
-        sorting_bar_x + 1, sorting_bar_y + 1,
-        sorting_bar_x + sorting_bar_width - 1, sorting_bar_y + 1,
-        sorting_bar_x + sorting_bar_width - 1, sorting_bar_y + 3,
-        sorting_bar_x + 1, sorting_bar_y + 3,
-        fill=rgb(255, 255, 255), opacity=20
-    )
-    
-    game.sorting_meter.add(sorting_bar_bg)
-    game.sorting_meter.add(sorting_bar_fill)
-    game.sorting_meter.add(sorting_shine)
-    game.sorting_meter.add(sorting_bar_border)
-    
     # Create crop area indicator
     game.crop_area = Group()
     crop_area_rect = Rect(game.crop_area_x - 30, game.crop_area_y - 50, 60, 60, 
@@ -1127,15 +1099,18 @@ def try_harvest_crop(mouse_x, mouse_y):
             app.game.produced_food_today += 1
             app.game.produced_food_types.append(app.game.selected_food.food_type)
             app.game.produced_label.value = f'Produced: {app.game.produced_food_today}/5'
+            app.game.produced_label.left = 20  # Ensure left alignment
             
             # Increase food level
             food_increase = min(15, 5 + random.randint(0, 5))
             app.game.food_level = min(100, app.game.food_level + food_increase)
             app.game.food_label.value = f'Food: {int(app.game.food_level)}%'
+            app.game.food_label.left = 20  # Ensure left alignment
             
             # Also increase food waste slightly
             app.game.food_waste = min(100, app.game.food_waste + 2)
             app.game.waste_label.value = f'Waste: {int(app.game.food_waste)}%'
+            app.game.waste_label.left = 20  # Ensure left alignment
             
             # Create waste when food is produced (100% chance now)
             if len(app.game.waste.children) < 2:  # Max 2 pieces of waste
@@ -1143,6 +1118,7 @@ def try_harvest_crop(mouse_x, mouse_y):
                 app.game.waste.add(waste)
                 app.game.pollution_level = min(500, app.game.pollution_level + 50)
                 app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
+                app.game.pollution_label.left = 20  # Ensure left alignment
                 
                 # Add waste to sorting queue if not already at max
                 if len(app.game.waste_to_sort) < app.game.max_waste_to_sort:
@@ -1190,8 +1166,10 @@ def try_harvest_crop(mouse_x, mouse_y):
                 app.game.sorting_correct += 1
                 app.game.pollution_level = max(0, app.game.pollution_level - 50)
                 app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
+                app.game.pollution_label.left = 20  # Ensure left alignment
                 app.game.food_waste = max(0, app.game.food_waste - 10)
                 app.game.waste_label.value = f'Waste: {int(app.game.food_waste)}%'
+                app.game.waste_label.left = 20  # Ensure left alignment
                 
                 # No feedback for correct sorting - removed to avoid annoyance
             
@@ -1199,6 +1177,7 @@ def try_harvest_crop(mouse_x, mouse_y):
                 app.game.sorting_incorrect += 1
                 app.game.pollution_level = min(500, app.game.pollution_level + 50)
                 app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
+                app.game.pollution_label.left = 20  # Ensure left alignment
                 
                 # Show error feedback with more detailed message
                 feedback = Label(f'✗ Wrong! {app.game.selected_waste.waste_type.upper()} goes in TRASH', 
@@ -1217,6 +1196,7 @@ def try_harvest_crop(mouse_x, mouse_y):
             
             # Update sorting stats
             app.game.sorting_label.value = f'Sorting: {app.game.sorting_correct}/{app.game.sorting_correct + app.game.sorting_incorrect}'
+            app.game.sorting_label.left = 20  # Ensure left alignment
             
             return True
         
@@ -1228,6 +1208,7 @@ def try_harvest_crop(mouse_x, mouse_y):
                 app.game.sorting_correct += 1
                 app.game.pollution_level = max(0, app.game.pollution_level - 30)
                 app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
+                app.game.pollution_label.left = 20  # Ensure left alignment
                 
                 # No feedback for correct sorting - removed to avoid annoyance
             
@@ -1235,6 +1216,7 @@ def try_harvest_crop(mouse_x, mouse_y):
                 app.game.sorting_incorrect += 1
                 app.game.pollution_level = min(500, app.game.pollution_level + 30)
                 app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
+                app.game.pollution_label.left = 20  # Ensure left alignment
                 
                 # Show error feedback with more detailed message
                 feedback = Label(f'✗ Wrong! {app.game.selected_waste.waste_type.upper()} goes in COMPOST', 
@@ -1253,6 +1235,7 @@ def try_harvest_crop(mouse_x, mouse_y):
             
             # Update sorting stats
             app.game.sorting_label.value = f'Sorting: {app.game.sorting_correct}/{app.game.sorting_correct + app.game.sorting_incorrect}'
+            app.game.sorting_label.left = 20  # Ensure left alignment
             
             return True
     
@@ -1280,59 +1263,26 @@ def end_day():
     
     # Update stats display
     app.game.day_label.value = f'Day: {app.game.day}/{app.game.target_days}'
+    app.game.day_label.left = 20  # Ensure left alignment
     app.game.produced_label.value = f'Produced: {app.game.produced_food_today}/5'
+    app.game.produced_label.left = 20  # Ensure left alignment
     app.game.food_label.value = f'Food: {int(app.game.food_level)}%'
+    app.game.food_label.left = 20  # Ensure left alignment
     app.game.waste_label.value = f'Waste: {int(app.game.food_waste)}%'
+    app.game.waste_label.left = 20  # Ensure left alignment
     app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
+    app.game.pollution_label.left = 20  # Ensure left alignment
     
     if app.game.sorting_correct + app.game.sorting_incorrect > 0:
         app.game.sorting_label.value = f'Sorting: {app.game.sorting_correct}/{app.game.sorting_correct + app.game.sorting_incorrect}'
     else:
         app.game.sorting_label.value = f'Sorting: 0/0'
+    app.game.sorting_label.left = 20  # Ensure left alignment
     
     # Update meters
     update_hunger_bar()
     update_waste_meter()
     update_pollution_meter()
-    update_sorting_meter()
-
-def update_sorting_meter():
-    """Update sorting meter color and size"""
-    if not app.game.game_over:
-        bar = app.game.sorting_meter.children[1]  # The fill bar
-        total_sorts = app.game.sorting_correct + app.game.sorting_incorrect
-        
-        if total_sorts > 0:
-            correct_ratio = app.game.sorting_correct / total_sorts
-            # Ensure width is always at least 1 pixel but doesn't exceed the bar width
-            bar.width = max(1, min(78, 78 * correct_ratio))
-            
-            if correct_ratio > 0.7:
-                bar.fill = rgb(0, 200, 0)  # Bright green for good sorting
-                bar.opacity = 100
-            elif correct_ratio > 0.3:
-                bar.fill = rgb(200, 200, 0)  # Yellow for mediocre sorting
-                bar.opacity = 100
-            else:
-                bar.fill = rgb(200, 0, 0)  # Red for poor sorting
-                bar.opacity = 100
-        else:
-            bar.width = 1
-            bar.fill = rgb(0, 128, 0)
-            bar.opacity = 50
-    else:
-        bar = app.game.sorting_meter.children[1]
-        total_sorts = app.game.sorting_correct + app.game.sorting_incorrect
-        
-        if total_sorts > 0:
-            correct_ratio = app.game.sorting_correct / total_sorts
-            # Ensure width is always at least 1 pixel but doesn't exceed the bar width
-            bar.width = max(1, min(78, 78 * correct_ratio))
-        else:
-            bar.width = 1
-            
-        bar.fill = rgb(0, 128, 0)
-        bar.opacity = 100
 
 def onAppStart():
     app.game = create_game()
@@ -1361,6 +1311,16 @@ def onAppStart():
     
     # Ensure cursor indicator is always on top
     app.game.cursor_indicator.toFront()
+    
+    # Make sure monitors are visible and properly positioned
+    app.game.left_monitor.centerX = 50
+    app.game.left_monitor.centerY = 275
+    app.game.right_monitor.centerX = 350
+    app.game.right_monitor.centerY = 275
+    
+    # Ensure monitors are visible
+    app.game.left_monitor.visible = True
+    app.game.right_monitor.visible = True
 
 def onStep():
     if not app.game.game_over:
@@ -1396,12 +1356,15 @@ def onStep():
         
         # Ensure waste layer is always on top
         app.game.waste_layer.toFront()
+        
+        # Ensure monitors are visible
+        app.game.left_monitor.visible = True
+        app.game.right_monitor.visible = True
     
     # Update meters
     update_hunger_bar()
     update_waste_meter()
     update_pollution_meter()
-    update_sorting_meter()
 
 def onMousePress(mouseX, mouseY):
     try_harvest_crop(mouseX, mouseY)
