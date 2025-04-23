@@ -1354,12 +1354,12 @@ def onStep():
         # Ensure cursor indicator is always on top
         app.game.cursor_indicator.toFront()
         
-        # Ensure waste layer is always on top
-        app.game.waste_layer.toFront()
-        
         # Ensure monitors are visible
         app.game.left_monitor.visible = True
         app.game.right_monitor.visible = True
+        
+        # Ensure waste layer is always on top
+        app.game.waste_layer.toFront()
     
     # Update meters
     update_hunger_bar()
