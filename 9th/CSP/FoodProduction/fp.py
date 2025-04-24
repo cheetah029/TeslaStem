@@ -147,7 +147,7 @@ def create_game():
     game.background.add(fields)
     game.background.add(ground)
     game.background.add(factory)
-    game.background.add(game.waste)
+    # game.background.add(game.waste)
     
     # Create main conveyor belt
     game.conveyor_belt = Group()
@@ -1049,7 +1049,7 @@ def update_cursor_indicator():
         indicator.centerX = app.game.mouse_x
         indicator.centerY = app.game.mouse_y
 
-def try_harvest_crop(mouse_x, mouse_y):
+def try_process_food(mouse_x, mouse_y):
     """Attempt to interact with food items on the conveyor belt"""
     if app.game.game_over:
         return
@@ -1107,8 +1107,8 @@ def try_harvest_crop(mouse_x, mouse_y):
                     # Move waste to sorting area
                     waste.centerX = 200
                     waste.centerY = 280
-                    # Ensure waste is drawn on top
-                    waste.toFront()
+                    # # Ensure waste is drawn on top
+                    # waste.toFront()
                 
                 # No feedback about waste production - removed to avoid annoyance
             
@@ -1133,8 +1133,8 @@ def try_harvest_crop(mouse_x, mouse_y):
             # Move waste to mouse position immediately
             app.game.selected_waste.centerX = mouse_x
             app.game.selected_waste.centerY = mouse_y
-            # Ensure waste is drawn on top
-            app.game.selected_waste.toFront()
+            # # Ensure waste is drawn on top
+            # app.game.selected_waste.toFront()
             return True
     
     # Check if a monitor is being clicked for waste sorting
@@ -1269,22 +1269,24 @@ def onAppStart():
     app.game = create_game()
     app.stepsPerSecond = 30
     
-    # Create a dedicated layer for waste items that will be drawn on top
-    app.game.waste_layer = Group()
-    app.game.add(app.game.waste_layer)
+    # # Create a dedicated layer for waste items that will be drawn on top
+    # app.game.waste_layer = Group()
+    # app.game.add(app.game.waste_layer)
     
     # Ensure area indicators are drawn on top
     app.game.compost_area.toFront()
     app.game.trash_area.toFront()
     
-    # Move waste items to the top layer
-    for waste in app.game.waste.children:
-        waste.visible = False
-        app.game.waste_layer.add(waste)
-        waste.visible = True
+    # # Move waste items to the top layer
+    # for waste in app.game.waste.children:
+    #     waste.visible = False
+    #     app.game.waste_layer.add(waste)
+    #     waste.visible = True
     
-    # Ensure waste layer is always on top
-    app.game.waste_layer.toFront()
+    # # Ensure waste layer is always on top
+    # app.game.waste_layer.toFront()
+
+    app.game.waste.toFront()
     
     # Initialize feedback timer
     app.game.feedback_timer = None
@@ -1324,15 +1326,15 @@ def onStep():
                 app.game.feedback_timer = None
                 app.game.feedback_label = None
         
-        # Ensure cursor indicator is always on top
-        app.game.cursor_indicator.toFront()
-        
         # Ensure monitors are visible
         app.game.left_monitor.visible = True
         app.game.right_monitor.visible = True
         
         # Ensure waste layer is always on top
-        app.game.waste_layer.toFront()
+        app.game.waste.toFront()
+        
+        # Ensure cursor indicator is always on top
+        app.game.cursor_indicator.toFront()
     
     # Update meters
     update_hunger_bar()
@@ -1340,7 +1342,7 @@ def onStep():
     update_pollution_meter()
 
 def onMousePress(mouseX, mouseY):
-    try_harvest_crop(mouseX, mouseY)
+    try_process_food(mouseX, mouseY)
 
 def onKeyPress(key):
     if key == 'd':
@@ -1368,14 +1370,14 @@ def onMouseMove(mouseX, mouseY):
     if app.game.selected_waste:
         app.game.selected_waste.centerX = mouseX
         app.game.selected_waste.centerY = mouseY
-        # Ensure waste stays on top while being dragged
-        app.game.selected_waste.toFront()
+        # # Ensure waste stays on top while being dragged
+        # app.game.selected_waste.toFront()
+    
+    # Ensure waste layer is always on top
+    app.game.waste.toFront()
     
     # Ensure cursor indicator is always on top
     app.game.cursor_indicator.toFront()
-    
-    # Ensure waste layer is always on top
-    app.game.waste_layer.toFront()
 
 def onMouseRelease(mouseX, mouseY):
     # No need for special handling here anymore
