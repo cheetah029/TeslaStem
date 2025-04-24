@@ -28,7 +28,6 @@ def create_game():
     game.mouse_y = 200
     game.selected_food = None
     game.selected_waste = None
-    game.selected_crop = None
     
     # Production facility dimensions and position
     game.facility_x = 350
@@ -48,14 +47,12 @@ def create_game():
     game.waste = Group()
     game.waste_timer = 0
     game.pollution_level = 0
-    game.available_crops = []
-    game.max_available_crops = 3
     
     # Designated areas
-    game.crop_area_x = 50  # Left side crop area
-    game.crop_area_y = 280  # Moved down to make room for wider conveyor
-    game.waste_area_x = 350  # Right side waste area
-    game.waste_area_y = 320  # Moved down further
+    game.trash_area_x = 350  # Right side trash area
+    game.trash_area_y = 250  # Original position
+    game.compost_area_x = 50  # Left side compost area
+    game.compost_area_y = 250  # Same height as trash area
     
     # Waste sorting parameters
     game.waste_to_sort = []  # List of waste items waiting to be sorted
@@ -68,14 +65,6 @@ def create_game():
     game.selected_food_type = None
     game.food_options = ['bread', 'apple', 'carrot', 'tomato', 'potato', 'corn', 'wheat']
     game.food_option_buttons = []
-    
-    # Crop interaction parameters
-    game.crop_interaction_mode = False
-    game.crop_actions = ['water', 'fertilize', 'harvest']
-    game.crop_action_buttons = []
-    game.crop_water_level = 0
-    game.crop_fertilizer_level = 0
-    game.crop_health = 100
     
     # Food collection parameters
     game.selected_food = None
@@ -321,19 +310,19 @@ def create_game():
     game.pollution_meter.add(pollution_shine)
     game.pollution_meter.add(pollution_bar_border)
     
-    # Create crop area indicator
-    game.crop_area = Group()
-    crop_area_rect = Rect(game.crop_area_x - 30, game.crop_area_y - 50, 60, 60, 
+    # Create compost area indicator
+    game.compost_area = Group()
+    compost_area_rect = Rect(game.compost_area_x - 30, game.compost_area_y - 22, 60, 60, 
                          fill=None, border='green', borderWidth=2, opacity=50)
-    game.crop_area.add(crop_area_rect)
+    game.compost_area.add(compost_area_rect)
     
-    # Create waste area indicator
-    game.waste_area = Group()
-    waste_area_rect = Rect(game.waste_area_x - 30, game.crop_area_y - 50, 60, 60, 
+    # Create trash area indicator
+    game.trash_area = Group()
+    trash_area_rect = Rect(game.trash_area_x - 30, game.trash_area_y - 22, 60, 60, 
                           fill=None, border='red', borderWidth=2, opacity=50)
-    game.waste_area.add(waste_area_rect)
+    game.trash_area.add(trash_area_rect)
     
-    # Create left side computer monitor (crop monitor)
+    # Create left side computer monitor (compost monitor)
     game.left_monitor = Group()
     
     # Monitor base
@@ -417,14 +406,6 @@ def create_game():
     game.food_selection_panel.add(food_panel_bg)
     game.food_selection_panel.add(food_panel_title)
     game.food_selection_panel.visible = False
-    
-    # Create crop interaction panel
-    game.crop_panel = Group()
-    crop_panel_bg = Rect(50, 100, 100, 120, fill=rgb(50, 50, 50), opacity=80)
-    crop_panel_title = Label('Crop Actions', 100, 110, size=14, fill='white', bold=True)
-    game.crop_panel.add(crop_panel_bg)
-    game.crop_panel.add(crop_panel_title)
-    game.crop_panel.visible = False
     
     # Create food collection area
     game.food_collection_area = Group()
@@ -855,8 +836,8 @@ def check_game_over():
 def create_waste():
     """Create a piece of waste with recognizable graphics"""
     # Create waste in the designated waste area
-    x = app.game.waste_area_x + random.randint(-20, 20)
-    y = app.game.waste_area_y + random.randint(-20, 20)
+    x = app.game.trash_area_x + random.randint(-20, 20)
+    y = app.game.trash_area_y + random.randint(-20, 20)
     
     waste_group = Group()
     waste_type = random.choice(['plastic', 'chemical', 'organic', 'paper', 'metal', 'glass'])
@@ -1293,8 +1274,8 @@ def onAppStart():
     app.game.add(app.game.waste_layer)
     
     # Ensure area indicators are drawn on top
-    app.game.crop_area.toFront()
-    app.game.waste_area.toFront()
+    app.game.compost_area.toFront()
+    app.game.trash_area.toFront()
     
     # Move waste items to the top layer
     for waste in app.game.waste.children:
@@ -1325,7 +1306,6 @@ def onAppStart():
 def onStep():
     if not app.game.game_over:
         app.game.time += 1
-        spawn_crops()
         update_cursor_indicator()
         update_waste()
         update_conveyor_belt()
@@ -1333,13 +1313,6 @@ def onStep():
         # Check for game over conditions immediately
         if app.game.food_level <= 0 or app.game.pollution_level >= 500:
             check_game_over()
-        
-        # Update crop health based on water and fertilizer levels
-        if app.game.selected_crop:
-            # Crops need water and fertilizer to stay healthy
-            if app.game.crop_water_level < 30 or app.game.crop_fertilizer_level < 30:
-                app.game.crop_health = max(0, app.game.crop_health - 0.1)
-                app.game.crop_panel.children[3].value = f'Health: {app.game.crop_health}%'
         
         # Check if feedback timer has expired
         if (hasattr(app.game, 'feedback_timer') and 
