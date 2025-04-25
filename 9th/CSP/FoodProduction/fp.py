@@ -82,17 +82,17 @@ def create_game():
     # Sky and ground
     sky = Rect(0, 0, 400, 400, fill='skyBlue')
     
-    # Background landscape (rural area)
-    hills = Group()
-    for i in range(3):
-        hill = Oval(100 + i*150, 300, 200, 100, fill=rgb(34, 139, 34))
-        hills.add(hill)
+    # # Background landscape (rural area)
+    # hills = Group()
+    # for i in range(3):
+    #     hill = Oval(100 + i*150, 300, 200, 100, fill=rgb(34, 139, 34))
+    #     hills.add(hill)
     
-    # Farm fields in background
-    fields = Group()
-    for i in range(4):
-        field = Rect(50 + i*80, 250, 60, 40, fill=rgb(139, 69, 19))
-        fields.add(field)
+    # # Farm fields in background
+    # fields = Group()
+    # for i in range(4):
+    #     field = Rect(50 + i*80, 250, 60, 40, fill=rgb(139, 69, 19))
+    #     fields.add(field)
     
     # Ground (factory floor)
     ground = Rect(0, 180, 400, 220, fill=rgb(169, 169, 169))
@@ -143,8 +143,8 @@ def create_game():
     
     # Add background elements
     game.background.add(sky)
-    game.background.add(hills)
-    game.background.add(fields)
+    # game.background.add(hills)
+    # game.background.add(fields)
     game.background.add(ground)
     game.background.add(factory)
     # game.background.add(game.waste)
@@ -447,8 +447,8 @@ def create_game():
         Label('Sustainable Food Production', 200, 16, size=16, bold=True),
         Label('Click food on conveyor to collect it', 200, 350, size=14),
         Label('Drop food in processing area to produce', 200, 370, size=14),
-        Label('Click waste, then click a monitor to sort', 200, 390, size=14),
-        Label('Press D to end the day', 200, 410, size=14)
+        Label('Click waste, then click a bin to sort. Press D to end the day', 200, 390, size=14),
+        # Label('Press D to end the day', 200, 410, size=14)
     )
     
     # Game over screen
@@ -465,22 +465,22 @@ def create_game():
     
     return game
 
-def create_crop_colors():
-    """Create a random crop color scheme"""
-    # Base colors for crops
-    base_colors = [
-        rgb(0, 128, 0),  # Green
-        rgb(255, 215, 0),  # Golden
-        rgb(255, 140, 0),  # Dark orange
-        rgb(139, 69, 19),  # Brown
-        rgb(128, 128, 0),  # Olive
-    ]
-    main_color = random.choice(base_colors)
-    # Make detail color slightly different
-    detail_color = rgb(min(255, main_color.red + 20),
-                     min(255, main_color.green + 20),
-                     min(255, main_color.blue + 20))
-    return main_color, detail_color
+# def create_crop_colors():
+#     """Create a random crop color scheme"""
+#     # Base colors for crops
+#     base_colors = [
+#         rgb(0, 128, 0),  # Green
+#         rgb(255, 215, 0),  # Golden
+#         rgb(255, 140, 0),  # Dark orange
+#         rgb(139, 69, 19),  # Brown
+#         rgb(128, 128, 0),  # Olive
+#     ]
+#     main_color = random.choice(base_colors)
+#     # Make detail color slightly different
+#     detail_color = rgb(min(255, main_color.red + 20),
+#                      min(255, main_color.green + 20),
+#                      min(255, main_color.blue + 20))
+#     return main_color, detail_color
 
 def create_food_item():
     """Create a food item for the conveyor belt"""
@@ -600,153 +600,153 @@ def create_food_item():
     
     return food_group
 
-def spawn_crops():
-    """Spawn new visible crops for harvesting"""
-    # Adjust max visible crops based on production
-    app.game.max_available_crops = max(1, min(3, int(1 + app.game.food_production / 10)))
+# def spawn_crops():
+#     """Spawn new visible crops for harvesting"""
+#     # Adjust max visible crops based on production
+#     app.game.max_available_crops = max(1, min(3, int(1 + app.game.food_production / 10)))
     
-    # Adjust spawn rate based on production
-    spawn_chance = max(0.2, min(1.0, app.game.food_production / 30))
+#     # Adjust spawn rate based on production
+#     spawn_chance = max(0.2, min(1.0, app.game.food_production / 30))
     
-    while len(app.game.available_crops) < app.game.max_available_crops:
-        if random.random() > spawn_chance:
-            continue
+#     while len(app.game.available_crops) < app.game.max_available_crops:
+#         if random.random() > spawn_chance:
+#             continue
         
-        # Spawn crops in the designated crop area
-        # Use positions within the crop area
-        positions = [
-            (app.game.crop_area_x, app.game.crop_area_y),
-            (app.game.crop_area_x - 15, app.game.crop_area_y + 15),
-            (app.game.crop_area_x + 15, app.game.crop_area_y + 15)
-        ]
-        position_index = len(app.game.available_crops) % len(positions)
-        x, y = positions[position_index]
+#         # Spawn crops in the designated crop area
+#         # Use positions within the crop area
+#         positions = [
+#             (app.game.crop_area_x, app.game.crop_area_y),
+#             (app.game.crop_area_x - 15, app.game.crop_area_y + 15),
+#             (app.game.crop_area_x + 15, app.game.crop_area_y + 15)
+#         ]
+#         position_index = len(app.game.available_crops) % len(positions)
+#         x, y = positions[position_index]
         
-        size_scale = random.randint(1, 10)
-        size = 20 + (size_scale - 1) * 2
+#         size_scale = random.randint(1, 10)
+#         size = 20 + (size_scale - 1) * 2
         
-        # Create crop shape
-        crop_group = Group()
-        crop_group.harvested = False
+#         # Create crop shape
+#         crop_group = Group()
+#         crop_group.harvested = False
         
-        # Random crop colors
-        main_color, detail_color = create_crop_colors()
+#         # Random crop colors
+#         main_color, detail_color = create_crop_colors()
         
-        # Create crop components
-        crop_type = random.choice(['wheat', 'corn', 'potato', 'tomato', 'carrot'])
-        crop_group.crop_type = crop_type
+#         # Create crop components
+#         crop_type = random.choice(['wheat', 'corn', 'potato', 'tomato', 'carrot'])
+#         crop_group.crop_type = crop_type
         
-        # Add crop health indicator
-        crop_group.health = 100
-        crop_group.health_indicator = Circle(0, -size/2 - 10, 5, fill='green')
-        crop_group.add(crop_group.health_indicator)
+#         # Add crop health indicator
+#         crop_group.health = 100
+#         crop_group.health_indicator = Circle(0, -size/2 - 10, 5, fill='green')
+#         crop_group.add(crop_group.health_indicator)
         
-        # Add crop type indicator
-        crop_group.type_indicator = Label(crop_type[0].upper(), 0, -size/2 - 10, size=8, fill='white', bold=True)
-        crop_group.add(crop_group.type_indicator)
+#         # Add crop type indicator
+#         crop_group.type_indicator = Label(crop_type[0].upper(), 0, -size/2 - 10, size=8, fill='white', bold=True)
+#         crop_group.add(crop_group.type_indicator)
         
-        if crop_type == 'wheat':
-            # Wheat stalk
-            stalk = Line(0, 0, 0, size * 1.5, fill=rgb(139, 69, 19), lineWidth=2)
-            crop_group.add(stalk)
+#         if crop_type == 'wheat':
+#             # Wheat stalk
+#             stalk = Line(0, 0, 0, size * 1.5, fill=rgb(139, 69, 19), lineWidth=2)
+#             crop_group.add(stalk)
             
-            # Wheat head
-            head = Oval(0, -size/2, size, size/2, fill=main_color)
-            crop_group.add(head)
+#             # Wheat head
+#             head = Oval(0, -size/2, size, size/2, fill=main_color)
+#             crop_group.add(head)
             
-            # Wheat details
-            for i in range(5):
-                detail = Line(-size/2, -size/2 + i*size/4, size/2, -size/2 + i*size/4, 
-                             fill=detail_color, lineWidth=1)
-                crop_group.add(detail)
+#             # Wheat details
+#             for i in range(5):
+#                 detail = Line(-size/2, -size/2 + i*size/4, size/2, -size/2 + i*size/4, 
+#                              fill=detail_color, lineWidth=1)
+#                 crop_group.add(detail)
                 
-        elif crop_type == 'corn':
-            # Corn stalk
-            stalk = Line(0, 0, 0, size * 1.5, fill=rgb(139, 69, 19), lineWidth=2)
-            crop_group.add(stalk)
+#         elif crop_type == 'corn':
+#             # Corn stalk
+#             stalk = Line(0, 0, 0, size * 1.5, fill=rgb(139, 69, 19), lineWidth=2)
+#             crop_group.add(stalk)
             
-            # Corn cob
-            cob = Oval(0, -size/2, size/2, size, fill=main_color)
-            crop_group.add(cob)
+#             # Corn cob
+#             cob = Oval(0, -size/2, size/2, size, fill=main_color)
+#             crop_group.add(cob)
             
-            # Corn kernels
-            for i in range(3):
-                kernel = Circle(0, -size/2 + i*size/2, size/6, fill=detail_color)
-                crop_group.add(kernel)
+#             # Corn kernels
+#             for i in range(3):
+#                 kernel = Circle(0, -size/2 + i*size/2, size/6, fill=detail_color)
+#                 crop_group.add(kernel)
                 
-        elif crop_type == 'potato':
-            # Potato plant
-            plant = Polygon(
-                -size/2, 0,
-                size/2, 0,
-                size/3, -size,
-                -size/3, -size,
-                fill=rgb(0, 100, 0)
-            )
-            crop_group.add(plant)
+#         elif crop_type == 'potato':
+#             # Potato plant
+#             plant = Polygon(
+#                 -size/2, 0,
+#                 size/2, 0,
+#                 size/3, -size,
+#                 -size/3, -size,
+#                 fill=rgb(0, 100, 0)
+#             )
+#             crop_group.add(plant)
             
-            # Potato
-            potato = Oval(0, size/4, size, size/2, fill=main_color)
-            crop_group.add(potato)
+#             # Potato
+#             potato = Oval(0, size/4, size, size/2, fill=main_color)
+#             crop_group.add(potato)
             
-            # Potato texture - subtle bumps instead of eyes
-            for i in range(3):
-                bump = Circle(-size/4 + i*size/2, size/4, 1, fill=rgb(180, 150, 110))
-                crop_group.add(bump)
+#             # Potato texture - subtle bumps instead of eyes
+#             for i in range(3):
+#                 bump = Circle(-size/4 + i*size/2, size/4, 1, fill=rgb(180, 150, 110))
+#                 crop_group.add(bump)
                 
-        elif crop_type == 'tomato':
-            # Tomato plant
-            plant = Polygon(
-                -size/2, 0,
-                size/2, 0,
-                size/3, -size,
-                -size/3, -size,
-                fill=rgb(0, 100, 0)
-            )
-            crop_group.add(plant)
+#         elif crop_type == 'tomato':
+#             # Tomato plant
+#             plant = Polygon(
+#                 -size/2, 0,
+#                 size/2, 0,
+#                 size/3, -size,
+#                 -size/3, -size,
+#                 fill=rgb(0, 100, 0)
+#             )
+#             crop_group.add(plant)
             
-            # Tomato
-            tomato = Circle(0, size/4, size/2, fill=main_color)
-            crop_group.add(tomato)
+#             # Tomato
+#             tomato = Circle(0, size/4, size/2, fill=main_color)
+#             crop_group.add(tomato)
             
-            # Tomato stem
-            stem = Line(0, size/4 - size/2, 0, size/4, fill=rgb(0, 100, 0), lineWidth=2)
-            crop_group.add(stem)
+#             # Tomato stem
+#             stem = Line(0, size/4 - size/2, 0, size/4, fill=rgb(0, 100, 0), lineWidth=2)
+#             crop_group.add(stem)
             
-        else:  # carrot
-            # Carrot top
-            top = Polygon(
-                -size/2, 0,
-                size/2, 0,
-                size/3, -size,
-                -size/3, -size,
-                fill=rgb(0, 100, 0)
-            )
-            crop_group.add(top)
+#         else:  # carrot
+#             # Carrot top
+#             top = Polygon(
+#                 -size/2, 0,
+#                 size/2, 0,
+#                 size/3, -size,
+#                 -size/3, -size,
+#                 fill=rgb(0, 100, 0)
+#             )
+#             crop_group.add(top)
             
-            # Carrot
-            carrot = Polygon(
-                -size/4, 0,
-                size/4, 0,
-                size/6, size,
-                -size/6, size,
-                fill=main_color
-            )
-            crop_group.add(carrot)
+#             # Carrot
+#             carrot = Polygon(
+#                 -size/4, 0,
+#                 size/4, 0,
+#                 size/6, size,
+#                 -size/6, size,
+#                 fill=main_color
+#             )
+#             crop_group.add(carrot)
         
-        # Store size information
-        crop_group.crop_size = size
-        crop_group.size_scale = size_scale
+#         # Store size information
+#         crop_group.crop_size = size
+#         crop_group.size_scale = size_scale
         
-        # Set position
-        crop_group.centerX = x
-        crop_group.centerY = y
+#         # Set position
+#         crop_group.centerX = x
+#         crop_group.centerY = y
         
-        # Add crop to available crops
-        app.game.available_crops.append(crop_group)
+#         # Add crop to available crops
+#         app.game.available_crops.append(crop_group)
         
-        # Add crop to game
-        app.game.background.add(crop_group)
+#         # Add crop to game
+#         app.game.background.add(crop_group)
 
 def update_conveyor_belt():
     """Update conveyor belt and food items"""
@@ -1377,11 +1377,12 @@ def onMouseMove(mouseX, mouseY):
         # # Ensure waste stays on top while being dragged
         # app.game.selected_waste.toFront()
     
-    # Ensure waste layer is always on top
-    app.game.waste.toFront()
-    
-    # Ensure cursor indicator is always on top
-    app.game.cursor_indicator.toFront()
+    if not app.game.game_over:
+        # Ensure waste layer is always on top
+        app.game.waste.toFront()
+        
+        # Ensure cursor indicator is always on top
+        app.game.cursor_indicator.toFront()
 
 def onMouseRelease(mouseX, mouseY):
     # No need for special handling here anymore
