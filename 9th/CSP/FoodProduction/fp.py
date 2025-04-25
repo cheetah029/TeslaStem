@@ -51,6 +51,9 @@ def create_game():
     # Feedback system
     game.feedback_timer = None
     game.feedback_label = None
+    game.feedback_group = Group()  # New dedicated feedback group
+    # game.add(game.feedback_group)  # Add feedback group to game
+    game.feedback_group.toFront()  # Ensure feedback is always on top
     
     # Designated areas
     game.trash_area_x = 350  # Right side trash area
@@ -1171,8 +1174,8 @@ def try_process_food(mouse_x, mouse_y):
                 # Show error feedback with more detailed message
                 feedback = Label(f'✗ Wrong! {app.game.selected_waste.waste_type.upper()} goes in TRASH', 
                                mouse_x, mouse_y - 20, size=14, fill='red', bold=True)
-                app.game.add(feedback)
-                feedback.toFront()
+                app.game.feedback_group.add(feedback)  # Add to feedback group instead of game
+                app.game.feedback_group.toFront()
                 
                 # Remove feedback after 2 seconds
                 app.game.feedback_timer = time.time() + 2
@@ -1210,8 +1213,8 @@ def try_process_food(mouse_x, mouse_y):
                 # Show error feedback with more detailed message
                 feedback = Label(f'✗ Wrong! {app.game.selected_waste.waste_type.upper()} goes in COMPOST', 
                                mouse_x, mouse_y - 20, size=14, fill='red', bold=True)
-                app.game.add(feedback)
-                feedback.toFront()
+                app.game.feedback_group.add(feedback)  # Add to feedback group instead of game
+                app.game.feedback_group.toFront()
                 
                 # Remove feedback after 2 seconds
                 app.game.feedback_timer = time.time() + 2
