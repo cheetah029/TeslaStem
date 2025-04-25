@@ -52,6 +52,14 @@ def create_game():
     game.feedback_timer = None
     game.feedback_label = None
     game.feedback_group = Group()  # New dedicated feedback group
+    
+    # Create feedback box and label
+    game.feedback_box = Rect(50, 220, 300, 30, fill='white', border='red', opacity=80)
+    game.feedback_text = Label('', 200, 235, size=12, fill='red', bold=True)
+    game.feedback_group.add(game.feedback_box)
+    game.feedback_group.add(game.feedback_text)
+    game.feedback_group.visible = False
+    
     # game.add(game.feedback_group)  # Add feedback group to game
     game.feedback_group.toFront()  # Ensure feedback is always on top
     
@@ -1172,14 +1180,13 @@ def try_process_food(mouse_x, mouse_y):
                 app.game.pollution_label.left = 20  # Ensure left alignment
                 
                 # Show error feedback with more detailed message
-                feedback = Label(f'✗ Wrong! {app.game.selected_waste.waste_type.upper()} goes in TRASH', 
-                               mouse_x, mouse_y - 20, size=14, fill='red', bold=True)
-                app.game.feedback_group.add(feedback)  # Add to feedback group instead of game
+                app.game.feedback_text.value = f'Incorrect! {app.game.selected_waste.waste_type.upper()} goes in TRASH'
+                app.game.feedback_group.visible = True
                 app.game.feedback_group.toFront()
                 
                 # Remove feedback after 2 seconds
                 app.game.feedback_timer = time.time() + 2
-                app.game.feedback_label = feedback
+                app.game.feedback_label = app.game.feedback_text
             
             # Remove waste from game
             app.game.waste.remove(app.game.selected_waste)
@@ -1211,14 +1218,13 @@ def try_process_food(mouse_x, mouse_y):
                 app.game.pollution_label.left = 20  # Ensure left alignment
                 
                 # Show error feedback with more detailed message
-                feedback = Label(f'✗ Wrong! {app.game.selected_waste.waste_type.upper()} goes in COMPOST', 
-                               mouse_x, mouse_y - 20, size=14, fill='red', bold=True)
-                app.game.feedback_group.add(feedback)  # Add to feedback group instead of game
+                app.game.feedback_text.value = f'Incorrect! {app.game.selected_waste.waste_type.upper()} goes in COMPOST'
+                app.game.feedback_group.visible = True
                 app.game.feedback_group.toFront()
                 
                 # Remove feedback after 2 seconds
                 app.game.feedback_timer = time.time() + 2
-                app.game.feedback_label = feedback
+                app.game.feedback_label = app.game.feedback_text
             
             # Remove waste from game
             app.game.waste.remove(app.game.selected_waste)
@@ -1330,7 +1336,7 @@ def onStep():
         # Check if feedback timer has expired
         if app.game.feedback_timer is not None and app.game.feedback_label is not None:
             if time.time() > app.game.feedback_timer:
-                app.game.feedback_label.visible = False
+                app.game.feedback_group.visible = False
                 app.game.feedback_timer = None
                 app.game.feedback_label = None
         
