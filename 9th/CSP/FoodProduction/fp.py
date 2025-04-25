@@ -48,6 +48,10 @@ def create_game():
     game.waste_timer = 0
     game.pollution_level = 0
     
+    # Feedback system
+    game.feedback_timer = None
+    game.feedback_label = None
+    
     # Designated areas
     game.trash_area_x = 350  # Right side trash area
     game.trash_area_y = 250  # Original position
@@ -1321,10 +1325,7 @@ def onStep():
             check_game_over()
         
         # Check if feedback timer has expired
-        if (hasattr(app.game, 'feedback_timer') and 
-            hasattr(app.game, 'feedback_label') and 
-            app.game.feedback_timer is not None and 
-            app.game.feedback_label is not None):
+        if app.game.feedback_timer is not None and app.game.feedback_label is not None:
             if time.time() > app.game.feedback_timer:
                 app.game.feedback_label.visible = False
                 app.game.feedback_timer = None
