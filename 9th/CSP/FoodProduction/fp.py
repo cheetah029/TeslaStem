@@ -580,10 +580,14 @@ def create_food_item():
         # Wheat bundle
         bundle = Group()
         
+        # Wheat stem
+        stem = Line(x, y - 9, x, y + 20, fill='beige')
+        bundle.add(stem)
+        
         # Wheat stalks
         for i in range(5):
-            stalk = Line(x - 10 + i*4, y + 5, x - 10 + i*4, y - 5, 
-                        fill=rgb(139, 69, 19), lineWidth=1)
+            stalk = Line(x - 5, y - 5 + i*4, x + 5, y - 5 + i*4, 
+                        fill=rgb(210, 180, 140))
             bundle.add(stalk)
             
         food_group.add(bundle)
