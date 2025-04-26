@@ -1260,11 +1260,7 @@ def try_process_food(mouse_x, mouse_y):
                 app.game.waste_label.value = f'Waste: {int(app.game.food_waste)}%'
                 app.game.waste_label.left = 20  # Ensure left alignment
                 
-                # Show success feedback
-                app.game.feedback_text.value = f'✓ Correct! {app.game.selected_waste.waste_type.replace("_", " ").title()} goes in COMPOST'
-                app.game.feedback_text.fill = 'green'
-                app.game.feedback_group.visible = True
-                app.game.feedback_group.toFront()
+                # No feedback for correct sorting
             
             else:
                 app.game.sorting_incorrect += 1
@@ -1273,7 +1269,7 @@ def try_process_food(mouse_x, mouse_y):
                 app.game.pollution_label.left = 20  # Ensure left alignment
                 
                 # Show error feedback with more detailed message
-                app.game.feedback_text.value = f'✗ Wrong! {app.game.selected_waste.waste_type.replace("_", " ").title()} should go in TRASH'
+                app.game.feedback_text.value = f'Incorrect! {app.game.selected_waste.waste_type.replace("_", " ").title()} should go in TRASH'
                 app.game.feedback_text.fill = 'red'
                 app.game.feedback_group.visible = True
                 app.game.feedback_group.toFront()
@@ -1303,11 +1299,7 @@ def try_process_food(mouse_x, mouse_y):
                 app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
                 app.game.pollution_label.left = 20  # Ensure left alignment
                 
-                # Show success feedback
-                app.game.feedback_text.value = f'✓ Correct! {app.game.selected_waste.waste_type.replace("_", " ").title()} goes in TRASH'
-                app.game.feedback_text.fill = 'green'
-                app.game.feedback_group.visible = True
-                app.game.feedback_group.toFront()
+                # No feedback for correct sorting
             
             else:
                 app.game.sorting_incorrect += 1
@@ -1316,7 +1308,7 @@ def try_process_food(mouse_x, mouse_y):
                 app.game.pollution_label.left = 20  # Ensure left alignment
                 
                 # Show error feedback with more detailed message
-                app.game.feedback_text.value = f'✗ Wrong! {app.game.selected_waste.waste_type.replace("_", " ").title()} should go in COMPOST'
+                app.game.feedback_text.value = f'Incorrect! {app.game.selected_waste.waste_type.replace("_", " ").title()} should go in COMPOST'
                 app.game.feedback_text.fill = 'red'
                 app.game.feedback_group.visible = True
                 app.game.feedback_group.toFront()
