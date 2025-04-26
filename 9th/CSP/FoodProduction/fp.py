@@ -860,108 +860,190 @@ def check_game_over():
     return False
 
 def create_waste():
-    """Create a piece of waste with recognizable graphics"""
-    # Create waste in the designated waste area
-    x = app.game.trash_area_x + random.randint(-20, 20)
-    y = app.game.trash_area_y + random.randint(-20, 20)
+    # Define waste types with their correct destinations and descriptions
+    waste_types = [
+        # Compostable waste (organic materials that can decompose)
+        {
+            'type': 'apple_peels',
+            'destination': 'compost',
+            'description': 'Apple peels and cores',
+            'color': 'red',
+            'shape': 'apple'
+        },
+        {
+            'type': 'corn_husks',
+            'destination': 'compost',
+            'description': 'Corn husks and cobs',
+            'color': 'yellow',
+            'shape': 'corn'
+        },
+        {
+            'type': 'potato_skins',
+            'destination': 'compost',
+            'description': 'Potato peels and scraps',
+            'color': 'brown',
+            'shape': 'potato'
+        },
+        {
+            'type': 'carrot_tops',
+            'destination': 'compost',
+            'description': 'Carrot greens and ends',
+            'color': 'green',
+            'shape': 'carrot'
+        },
+        {
+            'type': 'rice_hulls',
+            'destination': 'compost',
+            'description': 'Rice hulls and bran',
+            'color': 'tan',
+            'shape': 'rice'
+        },
+        
+        # Non-compostable waste (materials that shouldn't decompose)
+        {
+            'type': 'plastic_wrappers',
+            'destination': 'trash',
+            'description': 'Food packaging plastic',
+            'color': 'blue',
+            'shape': 'wrapper'
+        },
+        {
+            'type': 'tin_cans',
+            'destination': 'trash',
+            'description': 'Empty food cans',
+            'color': 'gray',
+            'shape': 'can'
+        },
+        {
+            'type': 'rubber_bands',
+            'destination': 'trash',
+            'description': 'Bundling bands',
+            'color': 'black',
+            'shape': 'band'
+        },
+        {
+            'type': 'twine',
+            'destination': 'trash',
+            'description': 'Synthetic twine',
+            'color': 'white',
+            'shape': 'twine'
+        },
+        {
+            'type': 'labels',
+            'destination': 'trash',
+            'description': 'Plastic produce labels',
+            'color': 'red',
+            'shape': 'label'
+        }
+    ]
     
-    waste_group = Group()
-    waste_type = random.choice(['plastic', 'chemical', 'organic', 'paper', 'metal', 'glass'])
-    waste_group.waste_type = waste_type
+    # Create waste group
+    waste = Group()
     
-    if waste_type == 'plastic':
-        # Plastic bottle
-        bottle_body = Rect(x-5, y-15, 10, 30, fill='lightBlue', opacity=90)
-        bottle_neck = Rect(x-3, y-25, 6, 10, fill='lightBlue', opacity=90)
-        bottle_cap = Circle(x, y-30, 4, fill='blue')
+    # Randomly select a waste type
+    waste_type = random.choice(waste_types)
+    
+    # Create waste item based on type
+    if waste_type['shape'] == 'apple':
+        # Apple core with peels
+        core = Circle(0, 0, 10, fill='white')
+        peel1 = Arc(0, 0, 20, 20, 0, 180, fill='red')
+        peel2 = Arc(0, 0, 20, 20, 180, 180, fill='red')
+        stem = Line(0, -10, 0, -15, fill='brown', lineWidth=2)
+        leaf = Oval(2, -15, 6, 3, fill='green')
+        waste.add(core)
+        waste.add(peel1)
+        waste.add(peel2)
+        waste.add(stem)
+        waste.add(leaf)
         
-        # Add label
-        label = Label('PLASTIC', x, y, size=8, fill='black', bold=True)
+    elif waste_type['shape'] == 'corn':
+        # Corn cob with husks
+        cob = Oval(0, 0, 15, 8, fill='yellow')
+        husk1 = Arc(0, 0, 25, 15, 0, 180, fill='lightGreen')
+        husk2 = Arc(0, 0, 25, 15, 180, 180, fill='lightGreen')
+        waste.add(cob)
+        waste.add(husk1)
+        waste.add(husk2)
         
-        waste_group.add(bottle_body)
-        waste_group.add(bottle_neck)
-        waste_group.add(bottle_cap)
-        waste_group.add(label)
+    elif waste_type['shape'] == 'potato':
+        # Potato with skin
+        potato = Oval(0, 0, 15, 10, fill='brown')
+        skin = Arc(0, 0, 20, 15, 0, 180, fill='tan')
+        eye1 = Circle(-5, -2, 1, fill='black')
+        eye2 = Circle(5, 2, 1, fill='black')
+        waste.add(potato)
+        waste.add(skin)
+        waste.add(eye1)
+        waste.add(eye2)
         
-    elif waste_type == 'chemical':
-        # Chemical container
-        container = Rect(x-8, y-12, 16, 24, fill='purple', opacity=80)
-        container_top = Rect(x-6, y-16, 12, 4, fill='purple', opacity=80)
+    elif waste_type['shape'] == 'carrot':
+        # Carrot top with greens
+        carrot = Polygon(-5, 0, 5, 0, 3, 15, -3, 15, fill='orange')
+        greens = Group()
+        for i in range(5):
+            leaf = Line(-5 + i*2.5, 0, -3 + i*2.5, -8, fill='green', lineWidth=2)
+            greens.add(leaf)
+        waste.add(carrot)
+        waste.add(greens)
         
-        # Warning symbol
-        warning = Polygon(
-            x, y-20,
-            x+5, y-10,
-            x-5, y-10,
-            fill='yellow'
-        )
-        
-        # Add label
-        label = Label('CHEMICAL', x, y+5, size=8, fill='white', bold=True)
-        
-        waste_group.add(container)
-        waste_group.add(container_top)
-        waste_group.add(warning)
-        waste_group.add(label)
-        
-    elif waste_type == 'paper':
-        # Paper waste
-        paper = Rect(x-8, y-6, 16, 12, fill='white')
-        paper_fold = Line(x-4, y-6, x-4, y+6, fill='gray', lineWidth=1)
-        
-        # Add label
-        label = Label('PAPER', x, y+10, size=8, fill='black', bold=True)
-        
-        waste_group.add(paper)
-        waste_group.add(paper_fold)
-        waste_group.add(label)
-        
-    elif waste_type == 'metal':
-        # Metal can
-        can_body = Rect(x-6, y-12, 12, 24, fill='silver')
-        can_top = Circle(x, y-12, 6, fill='silver')
-        
-        # Add label
-        label = Label('METAL', x, y+10, size=8, fill='black', bold=True)
-        
-        waste_group.add(can_body)
-        waste_group.add(can_top)
-        waste_group.add(label)
-        
-    elif waste_type == 'glass':
-        # Glass bottle
-        bottle_body = Rect(x-5, y-15, 10, 30, fill='lightGreen', opacity=70)
-        bottle_neck = Rect(x-3, y-25, 6, 10, fill='lightGreen', opacity=70)
-        bottle_cap = Circle(x, y-30, 4, fill='green')
-        
-        # Add label
-        label = Label('GLASS', x, y, size=8, fill='black', bold=True)
-        
-        waste_group.add(bottle_body)
-        waste_group.add(bottle_neck)
-        waste_group.add(bottle_cap)
-        waste_group.add(label)
-        
-    else:  # organic
-        # Food waste
-        food_waste = Oval(x-10, y-8, 20, 16, fill='brown')
-        
-        # Mold spots
+    elif waste_type['shape'] == 'rice':
+        # Rice hulls
+        hulls = Group()
         for i in range(3):
-            spot = Circle(x-5 + i*5, y-5 + i*2, 2, fill='green')
-            waste_group.add(spot)
+            hull = Oval(-10 + i*10, 0, 8, 4, fill='tan')
+            hulls.add(hull)
+        waste.add(hulls)
         
-        # Add label
-        label = Label('ORGANIC', x, y+5, size=8, fill='white', bold=True)
+    elif waste_type['shape'] == 'wrapper':
+        # Plastic wrapper
+        wrapper = Rect(-10, -5, 20, 10, fill='lightBlue')
+        fold1 = Line(-10, 0, 10, 0, fill='white', lineWidth=1)
+        fold2 = Line(0, -5, 0, 5, fill='white', lineWidth=1)
+        waste.add(wrapper)
+        waste.add(fold1)
+        waste.add(fold2)
         
-        waste_group.add(food_waste)
-        waste_group.add(label)
+    elif waste_type['shape'] == 'can':
+        # Tin can
+        can = Rect(-6, -12, 12, 24, fill='silver')
+        top = Circle(0, -12, 6, fill='silver')
+        bottom = Circle(0, 12, 6, fill='silver')
+        rim = Circle(0, -12, 6, fill=None, border='gray', borderWidth=1)
+        waste.add(can)
+        waste.add(top)
+        waste.add(bottom)
+        waste.add(rim)
+        
+    elif waste_type['shape'] == 'band':
+        # Rubber band
+        band = Circle(0, 0, 12, fill=None, border='black', borderWidth=3)
+        waste.add(band)
+        
+    elif waste_type['shape'] == 'twine':
+        # Twine
+        twine = Group()
+        for i in range(3):
+            strand = Line(-15 + i*15, -2, -15 + i*15, 2, fill='white', lineWidth=2)
+            twine.add(strand)
+        waste.add(twine)
+        
+    elif waste_type['shape'] == 'label':
+        # Produce label
+        label = Rect(-8, -4, 16, 8, fill='red')
+        text = Label('PLU', 0, 0, size=6, fill='white', bold=True)
+        waste.add(label)
+        waste.add(text)
     
-    # Set position
-    waste_group.centerX = x
-    waste_group.centerY = y
+    # Add description label
+    label = Label(waste_type['description'], 0, 25, size=10, fill='black')
+    waste.add(label)
     
-    return waste_group
+    # Store waste type and destination
+    waste.waste_type = waste_type['type']
+    waste.destination = waste_type['destination']
+    
+    return waste
 
 def update_waste():
     """Update waste positions and create new waste"""
@@ -1168,8 +1250,8 @@ def try_process_food(mouse_x, mouse_y):
         # Check if left monitor (compost) is clicked
         if (mouse_x > 20 and mouse_x < 80 and 
             mouse_y > 250 and mouse_y < 300):
-            # Check if waste is organic
-            if app.game.selected_waste.waste_type == 'organic':
+            # Check if waste should go to compost
+            if app.game.selected_waste.destination == 'compost':
                 app.game.sorting_correct += 1
                 app.game.pollution_level = max(0, app.game.pollution_level - 50)
                 app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
@@ -1178,7 +1260,11 @@ def try_process_food(mouse_x, mouse_y):
                 app.game.waste_label.value = f'Waste: {int(app.game.food_waste)}%'
                 app.game.waste_label.left = 20  # Ensure left alignment
                 
-                # No feedback for correct sorting - removed to avoid annoyance
+                # Show success feedback
+                app.game.feedback_text.value = f'✓ Correct! {app.game.selected_waste.waste_type.replace("_", " ").title()} goes in COMPOST'
+                app.game.feedback_text.fill = 'green'
+                app.game.feedback_group.visible = True
+                app.game.feedback_group.toFront()
             
             else:
                 app.game.sorting_incorrect += 1
@@ -1187,13 +1273,14 @@ def try_process_food(mouse_x, mouse_y):
                 app.game.pollution_label.left = 20  # Ensure left alignment
                 
                 # Show error feedback with more detailed message
-                app.game.feedback_text.value = f'Incorrect! {app.game.selected_waste.waste_type.upper()} goes in TRASH'
+                app.game.feedback_text.value = f'✗ Wrong! {app.game.selected_waste.waste_type.replace("_", " ").title()} should go in TRASH'
+                app.game.feedback_text.fill = 'red'
                 app.game.feedback_group.visible = True
                 app.game.feedback_group.toFront()
-                
-                # Remove feedback after 2 seconds
-                app.game.feedback_timer = time.time() + 2
-                app.game.feedback_label = app.game.feedback_text
+            
+            # Remove feedback after 2 seconds
+            app.game.feedback_timer = time.time() + 2
+            app.game.feedback_label = app.game.feedback_text
             
             # Remove waste from game
             app.game.waste.remove(app.game.selected_waste)
@@ -1209,14 +1296,18 @@ def try_process_food(mouse_x, mouse_y):
         # Check if right monitor (trash) is clicked
         elif (mouse_x > 320 and mouse_x < 380 and 
               mouse_y > 250 and mouse_y < 300):
-            # Check if waste is plastic, chemical, metal, glass, or paper
-            if app.game.selected_waste.waste_type in ['plastic', 'chemical', 'metal', 'glass', 'paper']:
+            # Check if waste should go to trash
+            if app.game.selected_waste.destination == 'trash':
                 app.game.sorting_correct += 1
                 app.game.pollution_level = max(0, app.game.pollution_level - 30)
                 app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
                 app.game.pollution_label.left = 20  # Ensure left alignment
                 
-                # No feedback for correct sorting - removed to avoid annoyance
+                # Show success feedback
+                app.game.feedback_text.value = f'✓ Correct! {app.game.selected_waste.waste_type.replace("_", " ").title()} goes in TRASH'
+                app.game.feedback_text.fill = 'green'
+                app.game.feedback_group.visible = True
+                app.game.feedback_group.toFront()
             
             else:
                 app.game.sorting_incorrect += 1
@@ -1225,13 +1316,14 @@ def try_process_food(mouse_x, mouse_y):
                 app.game.pollution_label.left = 20  # Ensure left alignment
                 
                 # Show error feedback with more detailed message
-                app.game.feedback_text.value = f'Incorrect! {app.game.selected_waste.waste_type.upper()} goes in COMPOST'
+                app.game.feedback_text.value = f'✗ Wrong! {app.game.selected_waste.waste_type.replace("_", " ").title()} should go in COMPOST'
+                app.game.feedback_text.fill = 'red'
                 app.game.feedback_group.visible = True
                 app.game.feedback_group.toFront()
-                
-                # Remove feedback after 2 seconds
-                app.game.feedback_timer = time.time() + 2
-                app.game.feedback_label = app.game.feedback_text
+            
+            # Remove feedback after 2 seconds
+            app.game.feedback_timer = time.time() + 2
+            app.game.feedback_label = app.game.feedback_text
             
             # Remove waste from game
             app.game.waste.remove(app.game.selected_waste)
