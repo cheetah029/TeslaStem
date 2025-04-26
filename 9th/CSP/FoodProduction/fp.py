@@ -439,10 +439,16 @@ def create_game():
                                 game.food_collection_area_height,
                                 fill=None, border='white', borderWidth=2)
     
-    # Collection area label
-    collection_area_label = Label('FOOD PROCESSING', 
+    # Collection area label 1
+    collection_area_label1 = Label('PROCESS', 
                                 game.food_collection_area_x, 
-                                game.food_collection_area_y - 10, 
+                                game.food_collection_area_y - 20, 
+                                size=12, fill='white', bold=True)
+
+    # Collection area label 2
+    collection_area_label2 = Label('FOOD HERE', 
+                                game.food_collection_area_x, 
+                                game.food_collection_area_y - 5, 
                                 size=12, fill='white', bold=True)
     
     # Collection area counter
@@ -454,7 +460,8 @@ def create_game():
     # Add all collection area parts
     game.food_collection_area.add(collection_area_bg)
     game.food_collection_area.add(collection_area_border)
-    game.food_collection_area.add(collection_area_label)
+    game.food_collection_area.add(collection_area_label1)
+    game.food_collection_area.add(collection_area_label2)
     game.food_collection_area.add(collection_area_counter)
     
     # Instructions
@@ -1093,7 +1100,7 @@ def try_process_food(mouse_x, mouse_y):
             
             # Process the food
             app.game.food_collection_count += 1
-            app.game.food_collection_area.children[3].value = f'{app.game.food_collection_count}/{app.game.food_collection_target}'
+            app.game.food_collection_area.children[4].value = f'{app.game.food_collection_count}/{app.game.food_collection_target}'
             
             # Update production counter
             app.game.produced_food_today += 1
@@ -1257,7 +1264,7 @@ def end_day():
     app.game.day += 1
     app.game.produced_food_today = 0
     app.game.food_collection_count = 0
-    app.game.food_collection_area.children[3].value = f'{app.game.food_collection_count}/{app.game.food_collection_target}'
+    app.game.food_collection_area.children[4].value = f'{app.game.food_collection_count}/{app.game.food_collection_target}'
     
     # Update stats display
     app.game.day_label.value = f'Day: {app.game.day}/{app.game.target_days}'
