@@ -564,9 +564,21 @@ def create_food_item():
         tomato = Circle(x, y, 8, fill='red')
         food_group.add(tomato)
         
-        # Tomato stem
-        stem = Line(x, y - 8, x, y - 12, fill=rgb(101, 67, 33), lineWidth=2)
-        food_group.add(stem)
+        # # Tomato stem
+        # stem = Line(x, y - 8, x, y - 12, fill=rgb(101, 67, 33), lineWidth=2)
+        # food_group.add(stem)
+
+        # # Tomato top
+        # top = Oval(x, y - 5, 4, 3, fill='orange')
+        # food_group.add(top)
+
+        # Tomato leaves
+        leaf1 = Line(x, y - 5, x - 5, y - 9, fill='green')
+        leaf2 = Line(x, y - 5, x, y - 11, fill='green')
+        leaf3 = Line(x, y - 5, x + 5, y - 9, fill='green')
+        food_group.add(leaf1)
+        food_group.add(leaf2)
+        food_group.add(leaf3)
         
     elif food_type == 'potato':
         # Potato body - improved design without prominent eyes
@@ -866,35 +878,35 @@ def create_waste():
         {
             'type': 'apple_peels',
             'destination': 'compost',
-            'description': 'Apple peels and cores',
+            'description': 'Apple peels',
             'color': 'red',
             'shape': 'apple'
         },
         {
             'type': 'corn_husks',
             'destination': 'compost',
-            'description': 'Corn husks and cobs',
+            'description': 'Corn husks',
             'color': 'yellow',
             'shape': 'corn'
         },
         {
             'type': 'potato_skins',
             'destination': 'compost',
-            'description': 'Potato peels and scraps',
+            'description': 'Potato skins',
             'color': 'brown',
             'shape': 'potato'
         },
         {
             'type': 'carrot_tops',
             'destination': 'compost',
-            'description': 'Carrot greens and ends',
+            'description': 'Carrot tops',
             'color': 'green',
             'shape': 'carrot'
         },
         {
             'type': 'rice_hulls',
             'destination': 'compost',
-            'description': 'Rice hulls and bran',
+            'description': 'Rice hulls',
             'color': 'tan',
             'shape': 'rice'
         },
@@ -903,35 +915,35 @@ def create_waste():
         {
             'type': 'plastic_wrappers',
             'destination': 'trash',
-            'description': 'Food packaging plastic',
+            'description': 'Plastic wrappers',
             'color': 'blue',
             'shape': 'wrapper'
         },
         {
             'type': 'tin_cans',
             'destination': 'trash',
-            'description': 'Empty food cans',
+            'description': 'Tin cans',
             'color': 'gray',
             'shape': 'can'
         },
         {
             'type': 'rubber_bands',
             'destination': 'trash',
-            'description': 'Bundling bands',
+            'description': 'Rubber bands',
             'color': 'black',
             'shape': 'band'
         },
         {
             'type': 'twine',
             'destination': 'trash',
-            'description': 'Synthetic twine',
+            'description': 'Twine',
             'color': 'white',
             'shape': 'twine'
         },
         {
             'type': 'labels',
             'destination': 'trash',
-            'description': 'Plastic produce labels',
+            'description': 'Labels',
             'color': 'red',
             'shape': 'label'
         }
@@ -958,11 +970,20 @@ def create_waste():
         waste.add(leaf)
         
     elif waste_type['shape'] == 'corn':
-        # Corn cob with husks
-        cob = Oval(0, 0, 15, 8, fill='yellow')
-        husk1 = Arc(0, 0, 25, 15, 0, 180, fill='lightGreen')
-        husk2 = Arc(0, 0, 25, 15, 180, 180, fill='lightGreen')
+        # Corn cob with partially peeled husks
+        # Create the corn cob first (so it's underneath)
+        cob = Oval(0, 0, 8, 15, fill='yellow')
         waste.add(cob)
+        # Add some kernel texture
+        for i in range(3):
+            kernel = Circle(0, -5 + i*5, 0.5, fill=rgb(255, 200, 0))
+            waste.add(kernel)
+        
+        # Add two husks that are partially peeled back
+        # Left husk
+        husk1 = Arc(0, 10, 20, 15, 180, 135, fill='lightGreen')
+        # Right husk
+        husk2 = Arc(0, 10, 20, 15, 45, 135, fill='lightGreen')
         waste.add(husk1)
         waste.add(husk2)
         
