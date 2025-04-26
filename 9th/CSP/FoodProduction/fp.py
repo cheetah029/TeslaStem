@@ -14,7 +14,7 @@ def create_game():
     # Initial game parameters
     game.food_production = 0
     game.food_decrease_base = 50
-    game.food_level = 100
+    game.food_level = 75  # Changed from 100 to 75
     game.food_waste = 0  # New food waste parameter
     game.day = 1
     game.target_days = 20
@@ -207,15 +207,12 @@ def create_game():
     # Create a circular cursor indicator
     cursor_outer = Circle(0, 0, 15, fill=None, border='white', borderWidth=2)
     cursor_inner = Circle(0, 0, 5, fill='white')
+    cursor_middle = Circle(0, 0, 10, fill='white', opacity=50)
     
     # Add cursor parts
     game.cursor_indicator.add(cursor_outer)
     game.cursor_indicator.add(cursor_inner)
-    
-    # Create production indicator
-    game.production_indicator = Group()
-    indicator = Circle(game.facility_x, game.facility_y + 40, 10, fill='white', opacity=50)
-    game.production_indicator.add(indicator)
+    game.cursor_indicator.add(cursor_middle)
     
     # Create stats panel
     game.stats_panel = Group()
@@ -228,7 +225,7 @@ def create_game():
     # Create individual label variables to ensure consistent left alignment
     game.day_label = Label('Day: 1/20', 20, 25, size=12, fill='white', align='left')
     game.produced_label = Label('Produced: 0/5', 20, 45, size=12, fill='white', align='left')
-    game.food_label = Label('Food: 0', 20, 65, size=12, fill='white', align='left')
+    game.food_label = Label(f'Food: {game.food_level}%', 20, 65, size=12, fill='white', align='left')
     game.waste_label = Label('Waste: 0%', 20, 85, size=12, fill='white', align='left')
     game.pollution_label = Label('Pollution: 0%', 20, 105, size=12, fill='white', align='left')
     game.sorting_label = Label('Sorting: 0/0', 20, 125, size=12, fill='white', align='left')
@@ -1172,11 +1169,6 @@ def update_cursor_indicator():
         # Update cursor indicator position
         app.game.cursor_indicator.centerX = app.game.mouse_x
         app.game.cursor_indicator.centerY = app.game.mouse_y
-        
-        # Update production indicator position
-        indicator = app.game.production_indicator.children[0]
-        indicator.centerX = app.game.mouse_x
-        indicator.centerY = app.game.mouse_y
 
 def try_process_food(mouse_x, mouse_y):
     """Attempt to interact with food items on the conveyor belt"""
@@ -1188,10 +1180,13 @@ def try_process_food(mouse_x, mouse_y):
         # Simple distance check for food items
         distance = math.sqrt((food.centerX - mouse_x)**2 + (food.centerY - mouse_y)**2)
         if distance < 15:  # Click radius
-            # Food item clicked - select it
-            app.game.selected_food = food
-            app.game.conveyor_items.remove(food)
-            return True
+            # Only select if nothing else is currently selected
+            if app.game.selected_food is None and app.game.selected_waste is None:
+                # Food item clicked - select it
+                app.game.selected_food = food
+                app.game.conveyor_items.remove(food)
+                return True
+            return False  # Ignore click if something else is selected
     
     # Check if selected food is being dropped in the collection area
     if app.game.selected_food:
@@ -1223,7 +1218,7 @@ def try_process_food(mouse_x, mouse_y):
             app.game.waste_label.left = 20  # Ensure left alignment
             
             # Create waste when food is produced (100% chance now)
-            if len(app.game.waste.children) < 2:  # Max 2 pieces of waste
+            if len(app.game.waste.children) < app.game.max_waste_to_sort:  # Max 3 pieces of waste
                 waste = create_waste()
                 app.game.waste.add(waste)
                 app.game.pollution_level = min(500, app.game.pollution_level + 50)
@@ -1236,10 +1231,6 @@ def try_process_food(mouse_x, mouse_y):
                     # Move waste to sorting area
                     waste.centerX = 200
                     waste.centerY = 280
-                    # # Ensure waste is drawn on top
-                    # waste.toFront()
-                
-                # No feedback about waste production - removed to avoid annoyance
             
             # Remove the food item
             app.game.selected_food.visible = False
@@ -1256,15 +1247,16 @@ def try_process_food(mouse_x, mouse_y):
         # Use a more generous hit detection for waste items
         if (abs(waste.centerX - mouse_x) < 20 and 
             abs(waste.centerY - mouse_y) < 20):
-            app.game.selected_waste = waste
-            # Remove waste from sorting queue but keep it visible
-            app.game.waste_to_sort.remove(waste)
-            # Move waste to mouse position immediately
-            app.game.selected_waste.centerX = mouse_x
-            app.game.selected_waste.centerY = mouse_y
-            # # Ensure waste is drawn on top
-            # app.game.selected_waste.toFront()
-            return True
+            # Only select if nothing else is currently selected
+            if app.game.selected_food is None and app.game.selected_waste is None:
+                app.game.selected_waste = waste
+                # Remove waste from sorting queue but keep it visible
+                app.game.waste_to_sort.remove(waste)
+                # Move waste to mouse position immediately
+                app.game.selected_waste.centerX = mouse_x
+                app.game.selected_waste.centerY = mouse_y
+                return True
+            return False  # Ignore click if something else is selected
     
     # Check if a monitor is being clicked for waste sorting
     if app.game.selected_waste:
