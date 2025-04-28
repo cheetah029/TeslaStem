@@ -421,13 +421,13 @@ def create_game():
         Label('Plastic/Chemical → Trash', 200, 260, size=10, fill='red')
     )
     
-    # Create food selection panel
-    game.food_selection_panel = Group()
-    food_panel_bg = Rect(150, 100, 100, 120, fill=rgb(50, 50, 50), opacity=80)
-    food_panel_title = Label('Select Food Type', 200, 110, size=14, fill='white', bold=True)
-    game.food_selection_panel.add(food_panel_bg)
-    game.food_selection_panel.add(food_panel_title)
-    game.food_selection_panel.visible = False
+    # # Create food selection panel
+    # game.food_selection_panel = Group()
+    # food_panel_bg = Rect(150, 100, 100, 120, fill=rgb(50, 50, 50), opacity=80)
+    # food_panel_title = Label('Select Food Type', 200, 110, size=14, fill='white', bold=True)
+    # game.food_selection_panel.add(food_panel_bg)
+    # game.food_selection_panel.add(food_panel_title)
+    # game.food_selection_panel.visible = False
     
     # Create food collection area
     game.food_collection_area = Group()
@@ -1450,6 +1450,7 @@ def onStep():
         # Check for game over conditions immediately
         if app.game.food_level <= 0 or app.game.pollution_level >= 500:
             check_game_over()
+            return
         
         # Check if feedback timer has expired
         if app.game.feedback_timer is not None and app.game.feedback_label is not None:
@@ -1484,10 +1485,10 @@ def onKeyPress(key):
         app.game.visible = False
         # Create new game
         app.game = create_game()
-    elif key == 'f':
-        # Toggle food selection mode
-        app.game.food_selection_mode = not app.game.food_selection_mode
-        app.game.food_selection_panel.visible = app.game.food_selection_mode
+    # elif key == 'f':
+    #     # Toggle food selection mode
+    #     app.game.food_selection_mode = not app.game.food_selection_mode
+    #     app.game.food_selection_panel.visible = app.game.food_selection_mode
 
 def onMouseMove(mouseX, mouseY):
     app.game.mouse_x = mouseX
