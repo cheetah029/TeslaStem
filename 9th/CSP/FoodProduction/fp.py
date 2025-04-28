@@ -914,7 +914,7 @@ def check_game_over():
         return True
     return False
 
-def create_waste():
+def create_waste(size_scale=1):
     # Define waste types with their correct destinations and descriptions
     waste_types = [
         # Compostable waste (organic materials that can decompose)
@@ -1001,11 +1001,11 @@ def create_waste():
     # Create waste item based on type
     if waste_type['shape'] == 'apple':
         # Apple core with peels
-        core = Circle(0, 0, 10, fill='white')
-        peel1 = Arc(0, 0, 20, 20, 0, 180, fill='red')
-        peel2 = Arc(0, 0, 20, 20, 180, 180, fill='red')
-        stem = Line(0, -10, 0, -15, fill='brown', lineWidth=2)
-        leaf = Oval(2, -15, 6, 3, fill='green')
+        core = Circle(0, 0, 10 * size_scale, fill='white')
+        peel1 = Arc(0, 0, 20 * size_scale, 20 * size_scale, 0, 180, fill='red')
+        peel2 = Arc(0, 0, 20 * size_scale, 20 * size_scale, 180, 180, fill='red')
+        stem = Line(0, -10 * size_scale, 0, -15 * size_scale, fill='brown', lineWidth=2)
+        leaf = Oval(2 * size_scale, -15 * size_scale, 6 * size_scale, 3 * size_scale, fill='green')
         waste.add(core)
         waste.add(peel1)
         waste.add(peel2)
@@ -1014,28 +1014,25 @@ def create_waste():
         
     elif waste_type['shape'] == 'corn':
         # Corn cob with partially peeled husks
-        # Create the corn cob first (so it's underneath)
-        cob = Oval(0, 0, 8, 15, fill='yellow')
+        cob = Oval(0, 0, 8 * size_scale, 15 * size_scale, fill='yellow')
         waste.add(cob)
         # Add some kernel texture
         for i in range(3):
-            kernel = Circle(0, -5 + i*5, 0.5, fill=rgb(255, 200, 0))
+            kernel = Circle(0, -5 * size_scale + i*5 * size_scale, 0.5 * size_scale, fill=rgb(255, 200, 0))
             waste.add(kernel)
         
         # Add two husks that are partially peeled back
-        # Left husk
-        husk1 = Arc(0, 10, 20, 15, 180, 135, fill='lightGreen')
-        # Right husk
-        husk2 = Arc(0, 10, 20, 15, 45, 135, fill='lightGreen')
+        husk1 = Arc(0, 10 * size_scale, 20 * size_scale, 15 * size_scale, 180, 135, fill='lightGreen')
+        husk2 = Arc(0, 10 * size_scale, 20 * size_scale, 15 * size_scale, 45, 135, fill='lightGreen')
         waste.add(husk1)
         waste.add(husk2)
         
     elif waste_type['shape'] == 'potato':
         # Potato with skin
-        potato = Oval(0, 0, 15, 10, fill='brown')
-        skin = Arc(0, 0, 20, 15, 0, 180, fill='tan')
-        eye1 = Circle(-5, -2, 1, fill='black')
-        eye2 = Circle(5, 2, 1, fill='black')
+        potato = Oval(0, 0, 15 * size_scale, 10 * size_scale, fill='brown')
+        skin = Arc(0, 0, 20 * size_scale, 15 * size_scale, 0, 180, fill='tan')
+        eye1 = Circle(-5 * size_scale, -2 * size_scale, 1 * size_scale, fill='black')
+        eye2 = Circle(5 * size_scale, 2 * size_scale, 1 * size_scale, fill='black')
         waste.add(potato)
         waste.add(skin)
         waste.add(eye1)
@@ -1043,10 +1040,10 @@ def create_waste():
         
     elif waste_type['shape'] == 'carrot':
         # Carrot top with greens
-        carrot = Polygon(-5, 0, 5, 0, 3, 15, -3, 15, fill='orange')
+        carrot = Polygon(-5 * size_scale, 0, 5 * size_scale, 0, 3 * size_scale, 15 * size_scale, -3 * size_scale, 15 * size_scale, fill='orange')
         greens = Group()
         for i in range(5):
-            leaf = Line(-5 + i*2.5, 0, -3 + i*2.5, -8, fill='green', lineWidth=2)
+            leaf = Line(-5 * size_scale + i*2.5 * size_scale, 0, -3 * size_scale + i*2.5 * size_scale, -8 * size_scale, fill='green', lineWidth=2)
             greens.add(leaf)
         waste.add(carrot)
         waste.add(greens)
@@ -1055,25 +1052,25 @@ def create_waste():
         # Rice hulls
         hulls = Group()
         for i in range(3):
-            hull = Oval(-10 + i*10, 0, 8, 4, fill='tan')
+            hull = Oval(-10 * size_scale + i*10 * size_scale, 0, 8 * size_scale, 4 * size_scale, fill='tan')
             hulls.add(hull)
         waste.add(hulls)
         
     elif waste_type['shape'] == 'wrapper':
         # Plastic wrapper
-        wrapper = Rect(-10, -5, 20, 10, fill='lightBlue')
-        fold1 = Line(-10, 0, 10, 0, fill='white', lineWidth=1)
-        fold2 = Line(0, -5, 0, 5, fill='white', lineWidth=1)
+        wrapper = Rect(-10 * size_scale, -5 * size_scale, 20 * size_scale, 10 * size_scale, fill='lightBlue')
+        fold1 = Line(-10 * size_scale, 0, 10 * size_scale, 0, fill='white', lineWidth=1)
+        fold2 = Line(0, -5 * size_scale, 0, 5 * size_scale, fill='white', lineWidth=1)
         waste.add(wrapper)
         waste.add(fold1)
         waste.add(fold2)
         
     elif waste_type['shape'] == 'can':
         # Tin can
-        can = Rect(-6, -12, 12, 24, fill='silver')
-        top = Circle(0, -12, 6, fill='silver')
-        bottom = Circle(0, 12, 6, fill='silver')
-        rim = Circle(0, -12, 6, fill=None, border='gray', borderWidth=1)
+        can = Rect(-6 * size_scale, -12 * size_scale, 12 * size_scale, 24 * size_scale, fill='silver')
+        top = Circle(0, -12 * size_scale, 6 * size_scale, fill='silver')
+        bottom = Circle(0, 12 * size_scale, 6 * size_scale, fill='silver')
+        rim = Circle(0, -12 * size_scale, 6 * size_scale, fill=None, border='gray', borderWidth=1)
         waste.add(can)
         waste.add(top)
         waste.add(bottom)
@@ -1081,26 +1078,26 @@ def create_waste():
         
     elif waste_type['shape'] == 'band':
         # Rubber band
-        band = Circle(0, 0, 12, fill=None, border='black', borderWidth=3)
+        band = Circle(0, 0, 12 * size_scale, fill=None, border='black', borderWidth=3)
         waste.add(band)
         
     elif waste_type['shape'] == 'twine':
         # Twine
         twine = Group()
         for i in range(3):
-            strand = Line(-15 + i*15, -2, -15 + i*15, 2, fill='white', lineWidth=2)
+            strand = Line(-15 * size_scale + i*15 * size_scale, -2 * size_scale, -15 * size_scale + i*15 * size_scale, 2 * size_scale, fill='white', lineWidth=2)
             twine.add(strand)
         waste.add(twine)
         
     elif waste_type['shape'] == 'label':
         # Produce label
-        label = Rect(-8, -4, 16, 8, fill='red')
-        text = Label('PLU', 0, 0, size=6, fill='white', bold=True)
+        label = Rect(-8 * size_scale, -4 * size_scale, 16 * size_scale, 8 * size_scale, fill='red')
+        text = Label('PLU', 0, 0, size=6 * size_scale, fill='white', bold=True)
         waste.add(label)
         waste.add(text)
     
     # Add description label
-    label = Label(waste_type['description'], 0, 25, size=10, fill='black')
+    label = Label(waste_type['description'], 0, 25 * size_scale, size=10 * size_scale, fill='black')
     waste.add(label)
     
     # Store waste type and destination
@@ -1282,7 +1279,8 @@ def try_process_food(mouse_x, mouse_y):
             
             # Create waste when food is produced
             if len(app.game.waste.children) < app.game.max_waste_to_sort:
-                waste = create_waste()
+                # Create smaller waste for regular food items
+                waste = create_waste(0.8)  # 80% of normal size
                 app.game.waste.add(waste)
                 
                 # Add waste to sorting queue if not already at max
