@@ -521,6 +521,10 @@ def create_food_item():
     x = app.game.conveyor_x - app.game.conveyor_width/2 + 20
     y = app.game.conveyor_y - 10
     
+    # Randomly decide if this is a bonus food item (10% chance)
+    is_bonus = random.random() < 0.1
+    food_group.is_bonus = is_bonus
+    
     if food_type == 'bread':
         # Bread loaf
         bread = Oval(x, y, 20, 10, fill=rgb(210, 180, 140))
@@ -571,14 +575,6 @@ def create_food_item():
         tomato = Circle(x, y, 8, fill='red')
         food_group.add(tomato)
         
-        # # Tomato stem
-        # stem = Line(x, y - 8, x, y - 12, fill=rgb(101, 67, 33), lineWidth=2)
-        # food_group.add(stem)
-
-        # # Tomato top
-        # top = Oval(x, y - 5, 4, 3, fill='orange')
-        # food_group.add(top)
-
         # Tomato leaves
         leaf1 = Line(x, y - 5, x - 5, y - 9, fill='green')
         leaf2 = Line(x, y - 5, x, y - 11, fill='green')
@@ -632,6 +628,15 @@ def create_food_item():
             bundle.add(stalk)
             
         food_group.add(bundle)
+    
+    # Add bonus indicator if this is a bonus food item
+    if is_bonus:
+        # Add a golden glow effect
+        glow = Circle(x, y, 15, fill=None, border='gold', borderWidth=2)
+        food_group.add(glow)
+        # Add a star symbol
+        star = Label('★', x, y, size=12, fill='gold', bold=True)
+        food_group.add(star)
     
     # Set fixed movement properties
     food_group.speed = app.game.conveyor_speed
@@ -1250,6 +1255,9 @@ def try_process_food(mouse_x, mouse_y, process_type='food'):
             app.game.produced_food_types.append(app.game.selected_food.food_type)
             app.game.produced_label.value = f'Produced: {app.game.produced_food_today}/5'
             app.game.produced_label.left = 20
+            
+            # Use the food's is_bonus property to determine process type
+            process_type = 'bonus' if app.game.selected_food.is_bonus else 'food'
             
             # Increase food level based on process type
             if process_type == 'food':
