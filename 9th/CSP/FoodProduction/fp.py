@@ -31,7 +31,7 @@ def create_game():
     game.correct_sort_pollution_reduction = 15  # How much correct sorting reduces pollution
     game.incorrect_sort_waste_increase = 20     # How much incorrect sorting increases waste
     game.incorrect_sort_pollution_increase = 10 # How much incorrect sorting increases pollution
-    game.daily_food_decrease = 10        # How much food decreases per day
+    game.daily_food_decrease = 25        # Increased from 10 to 25 to make hunger more challenging
     
     # Mouse position tracking
     game.mouse_x = 200
@@ -858,6 +858,13 @@ def check_game_over():
         app.game.game_over_screen.children[1].value = 'GAME OVER'
         app.game.game_over_screen.children[2].value = f'You failed to keep the community fed! Final food production: {app.game.food_production}'
         update_hunger_bar()
+        # Clear any selected items
+        if app.game.selected_food:
+            app.game.selected_food.visible = False
+            app.game.selected_food = None
+        if app.game.selected_waste:
+            app.game.selected_waste.visible = False
+            app.game.selected_waste = None
         return True
     elif app.game.pollution_level >= 500:
         app.game.game_over = True
@@ -866,6 +873,28 @@ def check_game_over():
         app.game.game_over_screen.children[1].value = 'GAME OVER'
         app.game.game_over_screen.children[2].value = 'The environment has become too polluted!'
         app.game.game_over_screen.children[3].value = f'Final food production: {app.game.food_production}'
+        # Clear any selected items
+        if app.game.selected_food:
+            app.game.selected_food.visible = False
+            app.game.selected_food = None
+        if app.game.selected_waste:
+            app.game.selected_waste.visible = False
+            app.game.selected_waste = None
+        return True
+    elif app.game.food_waste >= 100:  # New waste-based game over condition
+        app.game.game_over = True
+        app.game.game_over_screen.visible = True
+        app.game.game_over_screen.toFront()
+        app.game.game_over_screen.children[1].value = 'GAME OVER'
+        app.game.game_over_screen.children[2].value = 'Waste management has failed! The facility is overwhelmed with waste!'
+        app.game.game_over_screen.children[3].value = f'Final food production: {app.game.food_production}'
+        # # Clear any selected items
+        # if app.game.selected_food:
+        #     app.game.selected_food.visible = False
+        #     app.game.selected_food = None
+        # if app.game.selected_waste:
+        #     app.game.selected_waste.visible = False
+        #     app.game.selected_waste = None
         return True
     elif app.game.day >= app.game.target_days:
         app.game.game_over = True
@@ -875,6 +904,13 @@ def check_game_over():
         app.game.game_over_screen.children[2].value = 'Congratulations! You kept the community fed for 20 days!'
         app.game.game_over_screen.children[3].value = f'Final food production: {app.game.food_production}'
         update_hunger_bar()
+        # Clear any selected items
+        if app.game.selected_food:
+            app.game.selected_food.visible = False
+            app.game.selected_food = None
+        if app.game.selected_waste:
+            app.game.selected_waste.visible = False
+            app.game.selected_waste = None
         return True
     return False
 
@@ -1212,6 +1248,7 @@ def try_process_food(mouse_x, mouse_y):
             
             # Update production counter
             app.game.produced_food_today += 1
+            app.game.food_production += 1  # Increment total food production
             app.game.produced_food_types.append(app.game.selected_food.food_type)
             app.game.produced_label.value = f'Produced: {app.game.produced_food_today}/5'
             app.game.produced_label.left = 20
@@ -1226,6 +1263,16 @@ def try_process_food(mouse_x, mouse_y):
             app.game.food_waste = min(100, app.game.food_waste + app.game.food_production_waste)
             app.game.waste_label.value = f'Waste: {int(app.game.food_waste)}%'
             app.game.waste_label.left = 20
+            
+            # Check for waste-based game over immediately
+            if app.game.food_waste >= 100:
+                app.game.game_over = True
+                app.game.game_over_screen.visible = True
+                app.game.game_over_screen.toFront()
+                app.game.game_over_screen.children[1].value = 'GAME OVER'
+                app.game.game_over_screen.children[2].value = 'Waste management has failed! The facility is overwhelmed with waste!'
+                app.game.game_over_screen.children[3].value = f'Final food production: {app.game.food_production}'
+                return True
             
             # Increase pollution from food production and current waste level
             pollution_increase = app.game.food_production_pollution + (app.game.food_waste * app.game.waste_pollution_factor / 100)
@@ -1494,29 +1541,28 @@ def onMouseMove(mouseX, mouseY):
     app.game.mouse_x = mouseX
     app.game.mouse_y = mouseY
     
-    # Move selected food with mouse
-    if app.game.selected_food:
-        app.game.selected_food.centerX = mouseX
-        app.game.selected_food.centerY = mouseY
-    
-    # Move selected waste with mouse
-    if app.game.selected_waste:
-        app.game.selected_waste.centerX = mouseX
-        app.game.selected_waste.centerY = mouseY
-        # # Ensure waste stays on top while being dragged
-        # app.game.selected_waste.toFront()
-    
+    # Only move selected items if the game is not over
     if not app.game.game_over:
+        # Move selected food with mouse
+        if app.game.selected_food:
+            app.game.selected_food.centerX = mouseX
+            app.game.selected_food.centerY = mouseY
+        
+        # Move selected waste with mouse
+        if app.game.selected_waste:
+            app.game.selected_waste.centerX = mouseX
+            app.game.selected_waste.centerY = mouseY
+        
         # Ensure waste layer is always on top
         app.game.waste.toFront()
         
         # Ensure cursor indicator is always on top
         app.game.cursor_indicator.toFront()
 
-def onMouseRelease(mouseX, mouseY):
-    # No need for special handling here anymore
-    # All waste sorting is handled in try_harvest_crop
-    pass
+# def onMouseRelease(mouseX, mouseY):
+#     # No need for special handling here anymore
+#     # All waste sorting is handled in try_harvest_crop
+#     pass
 
 onAppStart()
 cmu_graphics.run()
