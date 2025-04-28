@@ -13,15 +13,25 @@ def create_game():
 
     # Initial game parameters
     game.food_production = 0
-    game.food_decrease_base = 50
-    game.food_level = 75  # Changed from 100 to 75
-    game.food_waste = 0  # New food waste parameter
+    game.food_decrease_base = 15  # Reduced from 50 to make hunger more manageable
+    game.food_level = 75
+    game.food_waste = 0
     game.day = 1
     game.target_days = 20
     game.game_over = False
     game.time = 0
     game.produced_food_today = 0
     game.produced_food_types = []
+    
+    # New balance parameters
+    game.food_production_pollution = 20  # Pollution per food item produced
+    game.food_production_waste = 15      # Waste increase per food item
+    game.waste_pollution_factor = 2      # How much waste contributes to pollution
+    game.correct_sort_reduction = 25     # How much correct sorting reduces waste
+    game.correct_sort_pollution_reduction = 15  # How much correct sorting reduces pollution
+    game.incorrect_sort_waste_increase = 20     # How much incorrect sorting increases waste
+    game.incorrect_sort_pollution_increase = 10 # How much incorrect sorting increases pollution
+    game.daily_food_decrease = 10        # How much food decreases per day
     
     # Mouse position tracking
     game.mouse_x = 200
@@ -1204,31 +1214,33 @@ def try_process_food(mouse_x, mouse_y):
             app.game.produced_food_today += 1
             app.game.produced_food_types.append(app.game.selected_food.food_type)
             app.game.produced_label.value = f'Produced: {app.game.produced_food_today}/5'
-            app.game.produced_label.left = 20  # Ensure left alignment
+            app.game.produced_label.left = 20
             
             # Increase food level
             food_increase = min(15, 5 + random.randint(0, 5))
             app.game.food_level = min(100, app.game.food_level + food_increase)
             app.game.food_label.value = f'Food: {int(app.game.food_level)}%'
-            app.game.food_label.left = 20  # Ensure left alignment
+            app.game.food_label.left = 20
             
-            # Also increase food waste slightly
-            app.game.food_waste = min(100, app.game.food_waste + 2)
+            # Increase waste and pollution from food production
+            app.game.food_waste = min(100, app.game.food_waste + app.game.food_production_waste)
             app.game.waste_label.value = f'Waste: {int(app.game.food_waste)}%'
-            app.game.waste_label.left = 20  # Ensure left alignment
+            app.game.waste_label.left = 20
             
-            # Create waste when food is produced (100% chance now)
-            if len(app.game.waste.children) < app.game.max_waste_to_sort:  # Max 3 pieces of waste
+            # Increase pollution from food production and current waste level
+            pollution_increase = app.game.food_production_pollution + (app.game.food_waste * app.game.waste_pollution_factor / 100)
+            app.game.pollution_level = min(500, app.game.pollution_level + pollution_increase)
+            app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
+            app.game.pollution_label.left = 20
+            
+            # Create waste when food is produced
+            if len(app.game.waste.children) < app.game.max_waste_to_sort:
                 waste = create_waste()
                 app.game.waste.add(waste)
-                app.game.pollution_level = min(500, app.game.pollution_level + 50)
-                app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
-                app.game.pollution_label.left = 20  # Ensure left alignment
                 
                 # Add waste to sorting queue if not already at max
                 if len(app.game.waste_to_sort) < app.game.max_waste_to_sort:
                     app.game.waste_to_sort.append(waste)
-                    # Move waste to sorting area
                     waste.centerX = 200
                     waste.centerY = 280
             
@@ -1244,19 +1256,15 @@ def try_process_food(mouse_x, mouse_y):
     
     # Check if waste is being clicked for sorting
     for waste in app.game.waste_to_sort[:]:
-        # Use a more generous hit detection for waste items
         if (abs(waste.centerX - mouse_x) < 20 and 
             abs(waste.centerY - mouse_y) < 20):
-            # Only select if nothing else is currently selected
             if app.game.selected_food is None and app.game.selected_waste is None:
                 app.game.selected_waste = waste
-                # Remove waste from sorting queue but keep it visible
                 app.game.waste_to_sort.remove(waste)
-                # Move waste to mouse position immediately
                 app.game.selected_waste.centerX = mouse_x
                 app.game.selected_waste.centerY = mouse_y
                 return True
-            return False  # Ignore click if something else is selected
+            return False
     
     # Check if a monitor is being clicked for waste sorting
     if app.game.selected_waste:
@@ -1266,22 +1274,26 @@ def try_process_food(mouse_x, mouse_y):
             # Check if waste should go to compost
             if app.game.selected_waste.destination == 'compost':
                 app.game.sorting_correct += 1
-                app.game.pollution_level = max(0, app.game.pollution_level - 50)
-                app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
-                app.game.pollution_label.left = 20  # Ensure left alignment
-                app.game.food_waste = max(0, app.game.food_waste - 10)
+                # Reduce waste and pollution for correct sorting
+                app.game.food_waste = max(0, app.game.food_waste - app.game.correct_sort_reduction)
                 app.game.waste_label.value = f'Waste: {int(app.game.food_waste)}%'
-                app.game.waste_label.left = 20  # Ensure left alignment
+                app.game.waste_label.left = 20
                 
-                # No feedback for correct sorting
-            
+                app.game.pollution_level = max(0, app.game.pollution_level - app.game.correct_sort_pollution_reduction)
+                app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
+                app.game.pollution_label.left = 20
             else:
                 app.game.sorting_incorrect += 1
-                app.game.pollution_level = min(500, app.game.pollution_level + 50)
-                app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
-                app.game.pollution_label.left = 20  # Ensure left alignment
+                # Increase waste and pollution for incorrect sorting
+                app.game.food_waste = min(100, app.game.food_waste + app.game.incorrect_sort_waste_increase)
+                app.game.waste_label.value = f'Waste: {int(app.game.food_waste)}%'
+                app.game.waste_label.left = 20
                 
-                # Show error feedback with more detailed message
+                app.game.pollution_level = min(500, app.game.pollution_level + app.game.incorrect_sort_pollution_increase)
+                app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
+                app.game.pollution_label.left = 20
+                
+                # Show error feedback
                 app.game.feedback_text.value = f'Incorrect! {app.game.selected_waste.waste_type.replace("_", " ").title()} should go in TRASH'
                 app.game.feedback_text.fill = 'red'
                 app.game.feedback_group.visible = True
@@ -1298,7 +1310,7 @@ def try_process_food(mouse_x, mouse_y):
             
             # Update sorting stats
             app.game.sorting_label.value = f'Sorting: {app.game.sorting_correct}/{app.game.sorting_correct + app.game.sorting_incorrect}'
-            app.game.sorting_label.left = 20  # Ensure left alignment
+            app.game.sorting_label.left = 20
             
             return True
         
@@ -1308,19 +1320,26 @@ def try_process_food(mouse_x, mouse_y):
             # Check if waste should go to trash
             if app.game.selected_waste.destination == 'trash':
                 app.game.sorting_correct += 1
-                app.game.pollution_level = max(0, app.game.pollution_level - 30)
-                app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
-                app.game.pollution_label.left = 20  # Ensure left alignment
+                # Reduce waste and pollution for correct sorting
+                app.game.food_waste = max(0, app.game.food_waste - app.game.correct_sort_reduction)
+                app.game.waste_label.value = f'Waste: {int(app.game.food_waste)}%'
+                app.game.waste_label.left = 20
                 
-                # No feedback for correct sorting
-            
+                app.game.pollution_level = max(0, app.game.pollution_level - app.game.correct_sort_pollution_reduction)
+                app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
+                app.game.pollution_label.left = 20
             else:
                 app.game.sorting_incorrect += 1
-                app.game.pollution_level = min(500, app.game.pollution_level + 30)
-                app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
-                app.game.pollution_label.left = 20  # Ensure left alignment
+                # Increase waste and pollution for incorrect sorting
+                app.game.food_waste = min(100, app.game.food_waste + app.game.incorrect_sort_waste_increase)
+                app.game.waste_label.value = f'Waste: {int(app.game.food_waste)}%'
+                app.game.waste_label.left = 20
                 
-                # Show error feedback with more detailed message
+                app.game.pollution_level = min(500, app.game.pollution_level + app.game.incorrect_sort_pollution_increase)
+                app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
+                app.game.pollution_label.left = 20
+                
+                # Show error feedback
                 app.game.feedback_text.value = f'Incorrect! {app.game.selected_waste.waste_type.replace("_", " ").title()} should go in COMPOST'
                 app.game.feedback_text.fill = 'red'
                 app.game.feedback_group.visible = True
@@ -1337,7 +1356,7 @@ def try_process_food(mouse_x, mouse_y):
             
             # Update sorting stats
             app.game.sorting_label.value = f'Sorting: {app.game.sorting_correct}/{app.game.sorting_correct + app.game.sorting_incorrect}'
-            app.game.sorting_label.left = 20  # Ensure left alignment
+            app.game.sorting_label.left = 20
             
             return True
     
@@ -1347,15 +1366,12 @@ def end_day():
     """Process end of day events"""
     # Check for game over conditions first
     if check_game_over():
-        return  # End the function if game is over
+        return
     
-    # Only process day events if game is not over
-    calculate_production()
-    update_hunger()
-    
-    # Check for game over again after updating hunger
-    if check_game_over():
-        return  # End the function if game is over
+    # Decrease food level each day
+    app.game.food_level = max(0, app.game.food_level - app.game.daily_food_decrease)
+    app.game.food_label.value = f'Food: {int(app.game.food_level)}%'
+    app.game.food_label.left = 20
     
     # Only increment day if we haven't won yet
     app.game.day += 1
@@ -1365,21 +1381,19 @@ def end_day():
     
     # Update stats display
     app.game.day_label.value = f'Day: {app.game.day}/{app.game.target_days}'
-    app.game.day_label.left = 20  # Ensure left alignment
+    app.game.day_label.left = 20
     app.game.produced_label.value = f'Produced: {app.game.produced_food_today}/5'
-    app.game.produced_label.left = 20  # Ensure left alignment
-    app.game.food_label.value = f'Food: {int(app.game.food_level)}%'
-    app.game.food_label.left = 20  # Ensure left alignment
+    app.game.produced_label.left = 20
     app.game.waste_label.value = f'Waste: {int(app.game.food_waste)}%'
-    app.game.waste_label.left = 20  # Ensure left alignment
+    app.game.waste_label.left = 20
     app.game.pollution_label.value = f'Pollution: {min(100, int(app.game.pollution_level / 5))}%'
-    app.game.pollution_label.left = 20  # Ensure left alignment
+    app.game.pollution_label.left = 20
     
     if app.game.sorting_correct + app.game.sorting_incorrect > 0:
         app.game.sorting_label.value = f'Sorting: {app.game.sorting_correct}/{app.game.sorting_correct + app.game.sorting_incorrect}'
     else:
         app.game.sorting_label.value = f'Sorting: 0/0'
-    app.game.sorting_label.left = 20  # Ensure left alignment
+    app.game.sorting_label.left = 20
     
     # Update meters
     update_hunger_bar()
