@@ -1,7 +1,12 @@
+# This project is tied to the UN Sustainable Development Goals (SDGs).
+# Goal 2: Zero Hunger
+# Goal 12: Responsible Consumption and Production
+
 # Sustainable Food Production Game
 
-# Goal is to sustainably grow food for the population to survive for 20 days.
+# Goal is to sustainably produce food for the population to survive for 20 days.
 # The player must balance food production with waste and pollution management.
+# When waste is sorted correctly, it reduces waste and pollution.
 
 from cmu_graphics import *
 import random
@@ -474,9 +479,9 @@ def create_game():
     # Instructions
     game.instructions = Group(
         Label('Sustainable Food Production', 200, 16, size=16, bold=True),
-        Label('Click food on conveyor to collect it', 200, 350, size=14),
-        Label('Drop food in processing area to produce', 200, 370, size=14),
-        Label('Click waste, then click a bin to sort. Press D to end the day', 200, 390, size=14),
+        Label('Click food on conveyor, then drop in processing area to produce', 200, 350, size=14),
+        Label('Click waste, then click a bin to sort. Press D to end the day', 200, 370, size=14),
+        Label('Feed the population for 20 days, but don\'t overproduce!', 200, 390, size=14),
         # Label('Press D to end the day', 200, 410, size=14)
     )
     
